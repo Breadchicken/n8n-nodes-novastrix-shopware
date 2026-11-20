@@ -1,0 +1,63 @@
+{
+	"name": "n8n-nodes-novastrix-shopware",
+	"version": "0.1.0",
+	"description": "n8n community node for the Shopware 6 Admin API with name-to-ID resolution, criteria search and bulk sync.",
+	"license": "MIT",
+	"homepage": "https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#readme",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"shopware",
+		"shopware6",
+		"ecommerce"
+	],
+	"author": {
+		"name": "Novastrix",
+		"email": "info@novastrix.com",
+		"url": "https://novastrix.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Breadchicken/n8n-nodes-novastrix-shopware.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/issues"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": [
+		"dist"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/ShopwareAdminApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Shopware/Shopware.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"eslint": "9.32.0",
+		"n8n-workflow": "^2.48.3",
+		"nock": "^15.0.6",
+		"prettier": "3.6.2",
+		"release-it": "^21.1.0",
+		"typescript": "5.9.2",
+		"vitest": "^5.1.1"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}

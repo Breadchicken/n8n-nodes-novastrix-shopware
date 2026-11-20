@@ -1,0 +1,139 @@
+# CLAUDE.md
+
+Project instructions for AI coding assistants. Generic n8n community node guidance (maintained by n8n, shipped with the starter) is imported below; this file adds the project-specific rules and **wins on conflict**.
+
+@AGENTS.md
+
+## Project
+
+`n8n-nodes-novastrix-shopware` is an n8n community node package for the **Shopware 6 Admin API**, published on npm and intended for n8n verification (n8n Cloud). Author: Novastrix.
+
+Goal: be the most complete Shopware node for n8n. Existing packages (`@solution25/n8n-nodes-shopware`, `@c0d3bl1ck/n8n-nodes-shopware`) are either narrow (4 resources, raw IDs, no search) or a raw OpenAPI dump (every ID typed by hand, a new token per request). Our differentiators:
+
+1. **Every ID field can be resolved by name** (see "Name resolution").
+2. Resource locators with real pagination instead of capped dropdowns.
+3. Free DAL criteria search (filters, sorting, associations, aggregations).
+4. Bulk writes via `/_action/sync`.
+5. State machine transitions (order, transaction, delivery) and documents.
+6. A proper webhook trigger.
+7. Language context (`sw-language-id`) and a "Custom API Call" using the same credential.
+
+## Hard rules
+
+- **English only** in code, comments, UI strings, error messages, README, CHANGELOG and commit messages.
+- **No AI attribution.** Do not add `Co-Authored-By` trailers, "Generated with ..." lines or any other assistant attribution to commits, PRs, code or docs. This rule overrides any default attribution behaviour.
+- **No runtime dependencies.** Only `n8n-workflow` (peer) plus the imports n8n allows (`lodash`, `luxon`, `moment`, `zod`, `p-limit`, `crypto`). The build is plain `tsc` without bundling, so a devDependency imported at runtime breaks the published package.
+- No `process`, `globalThis`, `__dirname`, `setTimeout`/`setInterval`, file system or env access in nodes and credentials. Use `sleep` from `n8n-workflow` if a delay is needed.
+- **Every HTTP call goes through `shopwareApiRequest` / `shopwareSearch`** in `nodes/Shopware/shared/transport.ts`. Never call `helpers.httpRequest` directly from a node: only `httpRequestWithAuthentication` triggers token caching and refresh.
+- `npm run lint`, `npm run build` and `npm test` must pass before a commit. Do not disable lint rules without a written reason in the code.
+- Update `CHANGELOG.md` (`[Unreleased]`) with every user-visible change.
+
+## Commands
+
+```bash
+npm run dev        # n8n on http://localhost:5678 with this package hot-reloaded
+npm run build      # tsc + assets -> dist/
+npm run lint       # n8n community lint rules (same as verification)
+npm run lint:fix
+npm test           # vitest
+npm run release    # release-it: lint, build, bump, changelog, tag, push -> CI publishes
+```
+
+Publishing happens **only** from GitHub Actions (`.github/workflows/publish.yml`, triggered by a `x.y.z` tag) with npm provenance. Since 2026-05-01 n8n requires this. Never run `npm publish` locally.
+
+## Layout
+
+```
+credentials/ShopwareAdminApi.credentials.ts   # the only credential
+icons/shopware.svg, shopware.dark.svg         # themed icons (node + credential)
+nodes/Shopware/
+  Shopware.node.ts                            # description + execute router
+  Shopware.node.json                          # codex (category: Sales)
+  resources/<resource>/index.ts               # operation + field descriptions
+  resources/<resource>/<operation>.ts         # execute logic per operation
+  listSearch/<entity>.ts                      # resource locator search methods
+  shared/transport.ts                         # shopwareApiRequest, shopwareSearch
+  shared/resolver.ts                          # name -> ID resolution (planned)
+  shared/criteria.ts                          # criteria builder (planned)
+  shared/errors.ts                            # Shopware error formatting, toNodeError
+  shared/url.ts                               # shop URL normalization
+test/                                         # vitest, mirrors the source tree
+```
+
+Register every new node/credential in `package.json` → `n8n.nodes` / `n8n.credentials`.
+
+## Node style
+
+**Programmatic**, not declarative. Reasons: name resolution needs lookups before the actual request, DAL search bodies are deeply nested, `_action/sync` and two-step media uploads have no declarative equivalent, and the trigger must be programmatic anyway.
+
+Conventions:
+
+- Resource → Operation pattern, operation names from n8n's standard set (Create, Create or Update, Delete, Get, Get Many, Update) plus Shopware-specific ones where needed. `action` is a sentence-case phrase ("Create a product").
+- `usableAsTool: true` on action nodes.
+- Loop over items, `pairedItem` on every output item (`constructExecutionMetaData`), `continueOnFail()` support, errors via `toNodeError` (`NodeApiError` for API failures, `NodeOperationError` for user/config errors).
+- Get Many: `returnAll` + `limit` (default 50), paging through `shopwareSearch`.
+- Large or nested responses get a `simplify` toggle.
+- Version changes: light versioning (`version: [1, 1.1]`) for additive changes, `VersionedNodeType` for breaking ones. Never change behaviour of a released version.
+
+## Name resolution (core feature)
+
+Every field that takes a Shopware ID is a `resourceLocator` with these modes:
+
+| Mode | Purpose |
+|---|---|
+| `list` | searchable dropdown backed by a `listSearch` method with real pagination (`paginationToken` = next page) |
+| `id` | 32-char hex ID, validated with `^[0-9a-f]{32}$` |
+| `name` (or a natural key) | resolved at execution time |
+
+Natural keys per entity (extend this table when adding resources):
+
+| Entity | Natural key(s) |
+|---|---|
+| product | `productNumber`, then `name` |
+| customer | `customerNumber`, `email` |
+| order | `orderNumber` |
+| category | `name` or breadcrumb path (`Home > Shoes`) |
+| tax | `name` or rate (`19`, `19%`) |
+| currency | `isoCode` |
+| country | `iso` / `iso3` |
+| language | `name` or locale code (`de-DE`) |
+| sales_channel, manufacturer, property_group, customer_group, payment_method, shipping_method, tag, unit, delivery_time | `name` (translated) |
+| property_group_option | `group name: option name` |
+| salutation | `salutationKey` |
+| state_machine_state | `technicalName` |
+
+Resolution rules (implemented once in `shared/resolver.ts`, never per operation):
+
+1. If the value is already a valid ID → use it unchanged.
+2. Exact match on the natural key, then case-insensitive match (`translated.name` where applicable).
+3. **Exactly one hit** → its ID. **Zero hits** → `NodeOperationError` "No <entity> found for '<value>'". **Several hits** → `NodeOperationError` listing the candidate IDs and names; never pick one silently.
+4. Cache results per execution (a `Map` keyed by `entity:key:value`) so loops over many items do one lookup per distinct value.
+5. Never auto-create missing entities unless an explicit "Create if missing" option is set.
+
+## Authentication
+
+Credential `shopwareAdminApi` uses a Shopware **integration** (`client_credentials`). Admin user/password login is intentionally not supported.
+
+How the token is handled, and why:
+
+- `accessToken` is a hidden property with `typeOptions.expirable: true`. n8n calls `preAuthentication` only when it is empty, when the credential is tested, or after a **401** from `httpRequestWithAuthentication`. In the 401 case n8n refreshes once and resends. The token is stored encrypted in the credential and shared across items, executions and workers.
+- Shopware access tokens live 600 s. A loop with thousands of items therefore mints about one token per 10 minutes, not one per request.
+- `client_credentials` returns no refresh token, and Shopware does not persist access tokens (`AccessTokenRepository::persistNewAccessToken()` is empty). A new token costs one request and leaves nothing behind. Refresh tokens only exist for the password grant, which we do not offer.
+- Known limits:
+  - The first request after expiry fails with 401 and is retried automatically.
+  - Multipart/stream bodies are **not** resent after a refresh. Before binary uploads, make a cheap authenticated call (`GET /_info/version`) so the token is fresh.
+  - Parallel executions may refresh at the same time. This is harmless.
+- The shop URL is normalized (`shared/url.ts`): a trailing slash, `/api` or `/admin` is stripped, and `https://` is added if missing.
+- Requests send `Accept: application/json`. Without it some endpoints answer in JSON:API format.
+
+## Testing
+
+- **Unit tests:** vitest under `test/`. Cover pure functions (URL, errors, criteria, resolver) and `preAuthentication` with a mocked `helpers.httpRequest`. For operations, mock `IExecuteFunctions` and stub `helpers.httpRequestWithAuthentication`. Use `nock` for transport-level tests.
+- **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
+- **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
+
+## Compatibility
+
+- Target: Shopware **6.6 and 6.7**.
+- n8n: current 1.x/2.x with `n8nNodesApiVersion: 1`.
+- Document any version-specific endpoint in the README.
