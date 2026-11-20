@@ -198,8 +198,8 @@ const stepValues: INodeProperties[] = [
 			'Comma-separated product numbers, names or IDs that are never offered (useful with dynamic product groups)',
 	},
 	{
-		displayName: 'Limit',
-		name: 'limit',
+		displayName: 'Max Products Shown',
+		name: 'maxProducts',
 		type: 'number',
 		typeOptions: { minValue: 0 },
 		default: 0,
@@ -266,18 +266,29 @@ const stepsProperty = (operation: string[]): INodeProperties => ({
 	options: [{ displayName: 'Step', name: 'items', values: stepValues }],
 });
 
-const stepInputProperty = (operation: string[]): INodeProperties => ({
-	displayName: 'Define Steps',
-	name: 'stepInput',
-	type: 'options',
-	options: [
-		{ name: 'Using Fields', value: 'fields' },
-		{ name: 'Using JSON', value: 'json' },
-		...(operation[0] === 'update' ? [{ name: 'Keep Existing Steps', value: 'keep' }] : []),
-	],
-	default: operation[0] === 'update' ? 'keep' : 'fields',
-	displayOptions: show(operation),
-});
+const stepInputOptions = [
+	{ name: 'Using Fields', value: 'fields' },
+	{ name: 'Using JSON', value: 'json' },
+];
+
+const stepInputProperties: INodeProperties[] = [
+	{
+		displayName: 'Define Steps',
+		name: 'stepInput',
+		type: 'options',
+		options: stepInputOptions,
+		default: 'fields',
+		displayOptions: show(['create']),
+	},
+	{
+		displayName: 'Define Steps',
+		name: 'stepInput',
+		type: 'options',
+		options: [{ name: 'Keep Existing Steps', value: 'keep' }, ...stepInputOptions],
+		default: 'keep',
+		displayOptions: show(['update']),
+	},
+];
 
 const stepsJsonProperty = (operation: string[]): INodeProperties => ({
 	displayName: 'Steps (JSON)',
@@ -285,7 +296,7 @@ const stepsJsonProperty = (operation: string[]): INodeProperties => ({
 	type: 'json',
 	default: '[]',
 	description:
-		'Steps in the plugin\'s format, e.g. [{"id": "ram", "name": "Memory", "source": {"type": "static", "productIds": ["..."]}}]. Product IDs are not resolved here.',
+		"Steps in the plugin's own format, as returned by Get in configuration.steps. Products are not resolved by number or name here.",
 	displayOptions: show(operation, { stepInput: ['json'] }),
 });
 
@@ -369,7 +380,7 @@ export const configuratorFields: INodeProperties[] = [
 		description: 'Internal name of the configurator',
 		displayOptions: show(['create']),
 	},
-	stepInputProperty(['create']),
+	stepInputProperties[0],
 	stepsProperty(['create']),
 	stepsJsonProperty(['create']),
 	{
@@ -384,7 +395,7 @@ export const configuratorFields: INodeProperties[] = [
 
 	/* ------------------------- get / update / delete ------------------------ */
 	configuratorLocator(['get', 'update', 'delete']),
-	stepInputProperty(['update']),
+	stepInputProperties[1],
 	stepsProperty(['update']),
 	stepsJsonProperty(['update']),
 	{

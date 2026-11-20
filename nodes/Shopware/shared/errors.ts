@@ -9,6 +9,12 @@ export interface ShopwareErrorEntry {
 	detail?: string;
 	source?: { pointer?: string };
 	meta?: IDataObject;
+	/** Fields used by Novastrix plugin routes. */
+	message?: string;
+	reason?: string;
+	type?: string;
+	field?: string;
+	child_product_number?: string;
 }
 
 /**
@@ -21,23 +27,50 @@ export interface ShopwareErrorEntry {
 export function formatShopwareErrors(
 	body: unknown,
 ): { message: string; description: string } | undefined {
-	const errors = extractErrors(body);
+	const parsed = parseBody(body);
+	const errors = extractErrors(parsed);
+	const pluginMessage = typeof parsed?.message === 'string' ? parsed.message : undefined;
 	if (errors.length === 0) {
-		return undefined;
+		// Plugin routes answer `{ success: false, message }` instead of Shopware's error list.
+		return pluginMessage ? { message: pluginMessage, description: pluginMessage } : undefined;
 	}
 
 	const lines = errors.map((error) => {
-		const field = pointerToField(error.source?.pointer);
-		const text = error.detail || error.title || error.code || 'Unknown error';
+		const field =
+			pointerToField(error.source?.pointer) || error.child_product_number || error.field;
+		const text =
+			error.detail ||
+			error.message ||
+			error.reason ||
+			error.title ||
+			error.code ||
+			error.type ||
+			'Unknown error';
 		const prefix = field ? `${field}: ` : '';
-		const code = error.code ? ` [${error.code}]` : '';
+		const code = error.code || error.type ? ` [${error.code ?? error.type}]` : '';
 		return `${prefix}${text}${code}`;
 	});
 
+	const conflictFields = errors
+		.filter((error) => error.type === 'conflict')
+		.map((error) => error.field);
+	if (!pluginMessage && conflictFields.length === errors.length) {
+		return {
+			message: `The products differ in: ${conflictFields.join(', ')}`,
+			description: lines.join('\n'),
+		};
+	}
+
 	const first = errors[0];
 	// Shopware titles are often generic ("Bad Request"), the detail carries the actual cause.
-	const message = first.detail || first.title || 'Shopware API error';
-	const suffix = errors.length > 1 ? ` (+${errors.length - 1} more)` : '';
+	const message =
+		pluginMessage ||
+		first.detail ||
+		first.message ||
+		first.reason ||
+		first.title ||
+		'Shopware API error';
+	const suffix = !pluginMessage && errors.length > 1 ? ` (+${errors.length - 1} more)` : '';
 
 	return {
 		message: `${message}${suffix}`,
@@ -45,26 +78,36 @@ export function formatShopwareErrors(
 	};
 }
 
-function extractErrors(body: unknown): ShopwareErrorEntry[] {
+function parseBody(body: unknown): IDataObject | undefined {
 	let parsed = body;
 	if (typeof parsed === 'string') {
 		try {
 			parsed = JSON.parse(parsed);
 		} catch {
-			return [];
+			return undefined;
 		}
 	}
+	return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+		? (parsed as IDataObject)
+		: undefined;
+}
 
-	if (!parsed || typeof parsed !== 'object') {
+function extractErrors(parsed: IDataObject | undefined): ShopwareErrorEntry[] {
+	if (!parsed) {
 		return [];
 	}
-
-	const errors = (parsed as { errors?: unknown }).errors;
-	if (!Array.isArray(errors)) {
-		return [];
-	}
-
-	return errors.filter(
+	// Plugin routes may report conflicts (e.g. differing field values) next to `errors`.
+	const entries = [
+		...(Array.isArray(parsed.errors) ? parsed.errors : []),
+		...(Array.isArray(parsed.conflicts)
+			? (parsed.conflicts as IDataObject[]).map((conflict) => ({
+					field: conflict.field,
+					message: `values differ between the products: ${JSON.stringify(conflict.distinct_values ?? [])}`,
+					type: 'conflict',
+				}))
+			: []),
+	];
+	return entries.filter(
 		(entry): entry is ShopwareErrorEntry => !!entry && typeof entry === 'object',
 	);
 }

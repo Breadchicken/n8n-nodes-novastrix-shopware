@@ -40,6 +40,7 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 | Configurator (Novastrix) | Create, Delete, Get, Get Many, Update |
 | Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit |
 | System | Get Version |
+| Variant (Novastrix) | Merge (into an existing or AI-created parent), Detach, Move, Get Many, Get / Add / Remove Configurator Option |
 
 More resources are in progress.
 
@@ -86,6 +87,7 @@ The node fully supports the product data of the [Novastrix](https://novastrix.co
 | Supplier Management | Product: suppliers with purchase price, stock, delivery time, priority (suppliers by number or name), selection strategy |
 | Product Dashboard | Product: *Run Quality Audit*, *Get Quality Audit* (score, grade, failed criteria, priority) |
 | Product Configurator | Resource *Configurator*: steps as form fields, products by number or name, dependencies by step name, or the raw JSON |
+| Variant Creator | Resource *Variant*: merge products into variants by product number and property name (`Color, Size`), with dry run; a new parent can be created with AI. Detach and move variants, list variants with their options (`Color: Red`), add or remove configurator options. |
 
 Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create or Update and Update. To read it, select `customFields` or the plugin associations (e.g. `pflaumSuppliers`) in Get.
 

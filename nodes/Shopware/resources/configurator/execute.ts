@@ -279,8 +279,8 @@ async function readSteps(
 			},
 			dependencies,
 		};
-		if (Number(item.limit) > 0) {
-			step.limit = Number(item.limit);
+		if (Number(item.maxProducts) > 0) {
+			step.limit = Number(item.maxProducts);
 		}
 		steps.push(step);
 	}

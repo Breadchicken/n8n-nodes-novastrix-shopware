@@ -40,4 +40,38 @@ describe('formatShopwareErrors', () => {
 		expect(formatShopwareErrors('not json')).toBeUndefined();
 		expect(formatShopwareErrors(undefined)).toBeUndefined();
 	});
+
+	it('reads plugin responses with a top-level message', () => {
+		const result = formatShopwareErrors({ success: false, message: 'Product is not a variant' });
+		expect(result?.message).toBe('Product is not a variant');
+	});
+
+	it('reads plugin validation errors and conflicts', () => {
+		const result = formatShopwareErrors({
+			success: false,
+			phase: 'validation',
+			errors: [
+				{
+					type: 'missing',
+					child_product_number: 'SW1',
+					message: 'Property "Color" is missing',
+				},
+			],
+			conflicts: [{ field: 'manufacturerId', distinct_values: ['a', 'b'] }],
+		});
+		expect(result?.message).toBe('Property "Color" is missing (+1 more)');
+		expect(result?.description).toBe(
+			'SW1: Property "Color" is missing [missing]\n' +
+				'manufacturerId: values differ between the products: ["a","b"] [conflict]',
+		);
+	});
+
+	it('names the differing fields when only conflicts are reported', () => {
+		const result = formatShopwareErrors({
+			success: false,
+			errors: [],
+			conflicts: [{ field: 'weight', distinct_values: [1, 2] }],
+		});
+		expect(result?.message).toBe('The products differ in: weight');
+	});
 });
