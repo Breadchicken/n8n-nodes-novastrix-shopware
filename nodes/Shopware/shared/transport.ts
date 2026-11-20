@@ -9,6 +9,8 @@ import type {
 import { NodeApiError } from 'n8n-workflow';
 
 import { formatShopwareErrors } from './errors';
+import type { NovastrixPlugin } from './plugins';
+import { PLUGIN_INFO_URL } from './plugins';
 import { EntityResolver } from './resolver';
 import { normalizeShopUrl } from './url';
 
@@ -21,10 +23,10 @@ export interface ShopwareRequestOptions {
 	qs?: IDataObject;
 	headers?: Record<string, string>;
 	/**
-	 * Display name of the plugin that provides this route or entity. A 404 is then reported as
+	 * Plugin that provides this route or entity. A 404 is then reported as
 	 * "plugin not installed" instead of a generic "Not Found".
 	 */
-	requiresPlugin?: string;
+	requiresPlugin?: NovastrixPlugin;
 }
 
 /**
@@ -71,8 +73,8 @@ export async function shopwareApiRequest<T = IDataObject>(
 	} catch (error) {
 		if (options.requiresPlugin && httpStatus(error) === 404) {
 			throw new NodeApiError(this.getNode(), error as JsonObject, {
-				message: `This operation needs the ${options.requiresPlugin} plugin`,
-				description: `Shopware answered 404 for ${method} /api${path}. Make sure the ${options.requiresPlugin} plugin is installed and active in the shop.`,
+				message: `This operation needs the ${options.requiresPlugin.name} plugin`,
+				description: `Shopware answered 404 for ${method} /api${path}. Make sure the ${options.requiresPlugin.name} plugin is installed and active in the shop. Learn more about the Novastrix plugins: ${PLUGIN_INFO_URL}`,
 			});
 		}
 		throw toNodeApiError(this, error);
@@ -151,7 +153,7 @@ export async function shopwareSearchPage(
 	entity: string,
 	criteria: IDataObject,
 	headers?: Record<string, string>,
-	requiresPlugin?: string,
+	requiresPlugin?: NovastrixPlugin,
 ): Promise<IDataObject[]> {
 	const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entityPath(entity)}`, {
 		body: criteria,
@@ -185,7 +187,7 @@ export async function shopwareSearch(
 	criteria: IDataObject = {},
 	maxItems?: number,
 	headers?: Record<string, string>,
-	requiresPlugin?: string,
+	requiresPlugin?: NovastrixPlugin,
 ): Promise<IDataObject[]> {
 	const pageSize = Math.min(maxItems ?? 500, 500);
 	const results: IDataObject[] = [];

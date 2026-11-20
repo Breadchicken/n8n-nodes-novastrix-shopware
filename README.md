@@ -76,7 +76,7 @@ Matching ignores case. If a value matches more than one record, the node stops w
 
 ## Novastrix plugins
 
-The node fully supports the product data of the [Novastrix](https://novastrix.com) Shopware plugins. Each field only takes effect if the plugin is installed; if a plugin is missing, the node says which one.
+The node fully supports the [Novastrix Shopware plugins](https://novastrix.com/shopware). Before using plugin data, the node checks that the plugin is installed and active in the shop (one lookup per run). If it is missing or inactive, the node stops with a message naming the plugin and a link to [novastrix.com/shopware](https://novastrix.com/shopware), instead of storing data that has no effect. If the integration may not read the plugin list, the check is skipped and a missing plugin is reported from Shopware's 404.
 
 | Plugin | Support |
 |---|---|

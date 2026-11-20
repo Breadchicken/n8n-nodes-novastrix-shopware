@@ -7,6 +7,8 @@ import type {
 import { NodeOperationError } from 'n8n-workflow';
 
 import { entityLocator } from '../../shared/locators';
+import type { NovastrixPlugin } from '../../shared/plugins';
+import { PLUGINS } from '../../shared/plugins';
 import type { ExecutionState } from '../../shared/state';
 import { shopwareApiRequest } from '../../shared/transport';
 
@@ -22,15 +24,7 @@ import { shopwareApiRequest } from '../../shared/transport';
  *   which match by (product, supplier) and therefore never create duplicates.
  */
 
-export const PLUGINS = {
-	backInStock: 'Novastrix Back in Stock',
-	defect: 'Novastrix Deficiency Description',
-	euWarranty: 'Novastrix EU Warranty Label',
-	seo: 'Novastrix SEO',
-	supplier: 'Novastrix Supplier Management',
-	dashboard: 'Novastrix Product Dashboard',
-	configurator: 'Novastrix Product Configurator',
-} as const;
+export { PLUGINS };
 
 /** Custom field names, as defined by the plugins. */
 const CUSTOM_FIELDS = {
@@ -44,6 +38,20 @@ const CUSTOM_FIELDS = {
 	seoFaqHtml: 'novastrix_seo_product_faq_html',
 	seoPriceValidUntil: 'novastrix_seo_price_valid_until',
 } as const;
+
+/** Plugin behind each field of the collection. EU guarantee is checked in `applyGuarantee`. */
+const FIELD_PLUGINS: Record<string, NovastrixPlugin | undefined> = {
+	bisDisabled: PLUGINS.backInStock,
+	bisPrelaunch: PLUGINS.backInStock,
+	defectConsent: PLUGINS.defect,
+	defectText: PLUGINS.defect,
+	seoSchemaDisabled: PLUGINS.seo,
+	seoFaq: PLUGINS.seo,
+	seoPriceValidUntil: PLUGINS.seo,
+	suppliers: PLUGINS.supplier,
+	supplierStrategy: PLUGINS.supplier,
+	fixedSupplier: PLUGINS.supplier,
+};
 
 export const SUPPLIER_STRATEGIES = [
 	{ name: 'Use Global Default', value: 'default' },
@@ -63,7 +71,7 @@ export const novastrixProductFields: INodeProperties = {
 	placeholder: 'Add Plugin Field',
 	default: {},
 	description:
-		'Product data of Novastrix plugins. Fields only take effect if the plugin is installed.',
+		'Product data of the Novastrix plugins. Each field needs its plugin in the shop; the node checks this before writing. <a href="https://novastrix.com/shopware" target="_blank">Learn more about the plugins</a>',
 	options: [
 		{
 			displayName: 'Back in Stock: Disable Alerts',
@@ -280,6 +288,13 @@ export async function buildPluginWrite(
 		return result;
 	}
 
+	// Shopware stores custom fields of missing plugins without complaint, so check up front.
+	for (const plugin of new Set(Object.keys(input).map((key) => FIELD_PLUGINS[key]))) {
+		if (plugin) {
+			await state.requirePlugin(plugin);
+		}
+	}
+
 	const copy = (key: keyof typeof CUSTOM_FIELDS) => {
 		if (input[key] !== undefined) {
 			result.customFields[CUSTOM_FIELDS[key]] = input[key];
@@ -359,6 +374,7 @@ async function applyGuarantee(
 		if (input.guaranteeConfirmed !== undefined)
 			result.fields.guaranteeConfirmed = input.guaranteeConfirmed;
 	} else {
+		await state.requirePlugin(PLUGINS.euWarranty);
 		if (input.guaranteeMonths !== undefined)
 			result.customFields[CUSTOM_FIELDS.guaranteeMonths] = input.guaranteeMonths;
 		if (input.guaranteeConfirmed !== undefined)

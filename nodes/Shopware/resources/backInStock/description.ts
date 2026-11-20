@@ -1,6 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 import { entityLocator } from '../../shared/locators';
+import { pluginNotice, PLUGINS } from '../../shared/plugins';
 
 const show = (operation: string[], extra: Record<string, unknown[]> = {}) => ({
 	show: { resource: ['backInStock'], operation, ...extra },
@@ -89,6 +90,7 @@ const subscriptionIdField = (operation: string[], extra: Record<string, unknown[
 	}) satisfies INodeProperties;
 
 export const backInStockFields: INodeProperties[] = [
+	pluginNotice(PLUGINS.backInStock, { show: { resource: ['backInStock'] } }, 'backInStockNotice'),
 	subscriptionIdField(['get', 'retryFailed']),
 
 	/* ------------------------------ unsubscribe ----------------------------- */

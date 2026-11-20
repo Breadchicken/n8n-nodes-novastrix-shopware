@@ -19,6 +19,8 @@ export async function executeConfigurator(
 	operation: string,
 	i: number,
 ): Promise<IDataObject | IDataObject[]> {
+	await state.requirePlugin(PLUGIN, i);
+
 	switch (operation) {
 		case 'get': {
 			const id = await resolveConfigurator.call(this, state, i);

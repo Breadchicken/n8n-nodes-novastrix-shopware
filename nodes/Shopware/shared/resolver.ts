@@ -2,13 +2,14 @@ import type { IDataObject, INodeParameterResourceLocator } from 'n8n-workflow';
 
 import type { EntityConfig, EntityKey } from './entities';
 import { CATEGORY_PATH_SEPARATOR, getEntityConfig, isShopwareId } from './entities';
+import type { NovastrixPlugin } from './plugins';
 
 /** Runs a DAL search and returns the records (no paging needed for lookups). */
 export type SearchFn = (
 	entity: string,
 	criteria: IDataObject,
 	headers?: Record<string, string>,
-	requiresPlugin?: string,
+	requiresPlugin?: NovastrixPlugin,
 ) => Promise<IDataObject[]>;
 
 /** Thrown when a value cannot be resolved to exactly one record. */

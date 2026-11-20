@@ -84,7 +84,10 @@ Conventions:
 The node must fully support the author's own Shopware plugins (source: `~/Documents/GitHub/shopware-plugins/shopware6-extension`). Rules:
 
 - Plugin product data lives in `resources/product/plugins.ts` (collection **Novastrix Plugin Fields**), plugin entities get their own resource (e.g. `resources/configurator`). Display names are prefixed with the plugin topic ("Deficiency: ...", "SEO: ...") so they group in the alphabetic list.
-- Every request to a plugin route or entity passes `requiresPlugin` (see `PLUGINS` in `plugins.ts`): a 404 then becomes "needs plugin X" instead of "Not Found".
+- Plugins are registered in `shared/plugins.ts` (`PLUGINS`: display name + technical name; `PLUGIN_INFO_URL` = https://novastrix.com/shopware).
+- **Check before use:** call `await state.requirePlugin(PLUGINS.x, i)` before any plugin operation or plugin field write (product fields map to plugins via `FIELD_PLUGINS` in `resources/product/plugins.ts`). Reason: Shopware silently stores custom fields of missing plugins, so without the check the data would land without effect. The check reads `plugin` once per run; on 403 (integration without plugin permission) it is skipped.
+- Every request to a plugin route or entity also passes `requiresPlugin`: a 404 then becomes "needs plugin X" (with the link) instead of "Not Found".
+- Plugin resources start with `pluginNotice(...)` (UI hint with the link).
 - Validate plugin rules before sending (e.g. EU guarantee months), so users get a precise message.
 - Prefer native Shopware fields when the shop has them (`state.hasField(entity, field)`), e.g. `guaranteeMonths` on 6.7.14+.
 - Use the plugin's own upsert routes where they exist (Supplier: `import-product-suppliers`, `product-strategy`); they match by natural keys and avoid duplicates.

@@ -191,12 +191,14 @@ export async function executeProduct(
 		}
 
 		case 'runAudit': {
+			await state.requirePlugin(PLUGINS.dashboard, i);
 			const id = await resolveProduct.call(this, state, i);
 			await runAudit.call(this, id, i);
 			return await getAudit.call(this, id, i);
 		}
 
 		case 'getAudit': {
+			await state.requirePlugin(PLUGINS.dashboard, i);
 			const id = await resolveProduct.call(this, state, i);
 			return await getAudit.call(this, id, i);
 		}

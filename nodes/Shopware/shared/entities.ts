@@ -1,5 +1,8 @@
 import type { IDataObject } from 'n8n-workflow';
 
+import type { NovastrixPlugin } from './plugins';
+import { PLUGINS } from './plugins';
+
 /** A DAL filter as accepted by `POST /api/search/{entity}`. */
 export type DalFilter = IDataObject;
 
@@ -33,7 +36,7 @@ export interface EntityConfig {
 	/** Associations loaded for display (disables `includes`). */
 	associations?: IDataObject;
 	/** Plugin that provides the entity; used for a clear error when it is missing. */
-	plugin?: string;
+	plugin?: NovastrixPlugin;
 	/** Extra headers for lookups, e.g. inheritance for variants. */
 	headers?: Record<string, string>;
 	/** Placeholder of the "By Name" mode. */
@@ -299,7 +302,7 @@ export const ENTITIES = {
 		lookups: [equals('number'), equals('name')],
 		searchFields: ['number', 'name'],
 		sortField: 'name',
-		plugin: 'Novastrix Supplier Management',
+		plugin: PLUGINS.supplier,
 		namePlaceholder: 'e.g. SUP-1001 or supplier name',
 		nameModeLabel: 'By Number or Name',
 	},
@@ -311,7 +314,7 @@ export const ENTITIES = {
 		lookups: [equals('name')],
 		searchFields: ['name'],
 		sortField: 'name',
-		plugin: 'Novastrix Product Configurator',
+		plugin: PLUGINS.configurator,
 		namePlaceholder: 'e.g. PC Bundle',
 	},
 } satisfies Record<string, EntityConfig>;

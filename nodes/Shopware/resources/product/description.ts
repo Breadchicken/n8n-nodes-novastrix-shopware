@@ -2,6 +2,7 @@ import type { INodeProperties } from 'n8n-workflow';
 
 import { entityLocator, entityLocatorList } from '../../shared/locators';
 import { languageOption } from '../../shared/options';
+import { pluginNotice, PLUGINS } from '../../shared/plugins';
 import { novastrixProductFields } from './plugins';
 
 const show = (operation: string[]) => ({ show: { resource: ['product'], operation } });
@@ -290,6 +291,11 @@ const productLocator = (operation: string[]) =>
 	});
 
 export const productFields: INodeProperties[] = [
+	pluginNotice(
+		PLUGINS.dashboard,
+		{ show: { resource: ['product'], operation: ['getAudit', 'runAudit'] } },
+		'auditNotice',
+	),
 	/* -------------------------------------------------------------------------- */
 	/*                         product:create / product:upsert                    */
 	/* -------------------------------------------------------------------------- */

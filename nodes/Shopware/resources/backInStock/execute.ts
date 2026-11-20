@@ -27,6 +27,8 @@ export async function executeBackInStock(
 			requiresPlugin: PLUGIN,
 		})) as IDataObject;
 
+	await state.requirePlugin(PLUGIN, i);
+
 	switch (operation) {
 		case 'get': {
 			const id = readId.call(this, 'subscriptionId', i);

@@ -18,7 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Novastrix plugin support for products: Deficiency Description, EU Warranty Label (native fields on 6.7.14+), SEO (FAQ builder), Back in Stock, Supplier Management (suppliers and strategy).
 - Product operations *Run Quality Audit* and *Get Quality Audit* (Novastrix Product Dashboard).
 - Configurator resource (Novastrix Product Configurator) with step editor, name resolution and dependencies.
-- Clear error when a required Novastrix plugin is not installed.
+- Plugin check: before plugin fields or plugin operations are used, the node verifies that the Novastrix plugin is installed and active (once per run) and links to novastrix.com/shopware otherwise. Plugin resources show a hint with the same link.
 - Product Get/Get Many: associations are loaded dynamically from the entity schema, including associations added by plugins.
 - Back in Stock resource (Novastrix Back in Stock): list and get subscriptions, unsubscribe by ID or email, resend notifications, list and retry failed notifications, demand per variant, recovered revenue.
 - Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.

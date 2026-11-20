@@ -1,6 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 import { entityLocator } from '../../shared/locators';
+import { pluginNotice, PLUGINS } from '../../shared/plugins';
 
 const show = (operation: string[], extra: Record<string, unknown[]> = {}) => ({
 	show: { resource: ['configurator'], operation, ...extra },
@@ -361,6 +362,11 @@ const configuratorLocator = (operation: string[]) =>
 	});
 
 export const configuratorFields: INodeProperties[] = [
+	pluginNotice(
+		PLUGINS.configurator,
+		{ show: { resource: ['configurator'] } },
+		'configuratorNotice',
+	),
 	/* -------------------------------- create -------------------------------- */
 	entityLocator({
 		displayName: 'Product',
