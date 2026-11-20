@@ -8,6 +8,7 @@ export type SearchFn = (
 	entity: string,
 	criteria: IDataObject,
 	headers?: Record<string, string>,
+	requiresPlugin?: string,
 ) => Promise<IDataObject[]>;
 
 /** Thrown when a value cannot be resolved to exactly one record. */
@@ -117,6 +118,7 @@ export class EntityResolver {
 				config.entity,
 				buildCriteria(config, [filter], MAX_CANDIDATES_SHOWN + 1),
 				config.headers,
+				config.plugin,
 			);
 
 			if (records.length === 1) {

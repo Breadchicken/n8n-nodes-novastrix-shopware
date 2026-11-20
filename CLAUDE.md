@@ -79,6 +79,22 @@ Conventions:
 - Large or nested responses get a `simplify` toggle.
 - Version changes: light versioning (`version: [1, 1.1]`) for additive changes, `VersionedNodeType` for breaking ones. Never change behaviour of a released version.
 
+## Novastrix plugin support
+
+The node must fully support the author's own Shopware plugins (source: `~/Documents/GitHub/shopware-plugins/shopware6-extension`). Rules:
+
+- Plugin product data lives in `resources/product/plugins.ts` (collection **Novastrix Plugin Fields**), plugin entities get their own resource (e.g. `resources/configurator`). Display names are prefixed with the plugin topic ("Deficiency: ...", "SEO: ...") so they group in the alphabetic list.
+- Every request to a plugin route or entity passes `requiresPlugin` (see `PLUGINS` in `plugins.ts`): a 404 then becomes "needs plugin X" instead of "Not Found".
+- Validate plugin rules before sending (e.g. EU guarantee months), so users get a precise message.
+- Prefer native Shopware fields when the shop has them (`state.hasField(entity, field)`), e.g. `guaranteeMonths` on 6.7.14+.
+- Use the plugin's own upsert routes where they exist (Supplier: `import-product-suppliers`, `product-strategy`); they match by natural keys and avoid duplicates.
+- Plugin facts worth knowing:
+  - Supplier: `import-product-suppliers` maps `supplierArticleNumber` -> `supplierNumber`; `selectionStrategy: null` resets to the global default. The plugin does not validate strategy values, so the node offers only valid ones.
+  - Product Dashboard: `audit/product` returns 409 `no_finished_run` until one full audit run has finished.
+  - Configurator: one configurator per product and position (plugin validates, code `NOVASTRIX_CONFIGURATOR__DUPLICATE_POSITION`); `productId` is a plain string, not an association; `configuration` is one JSON column, so updates merge into the stored value.
+  - Custom fields of plugins are translated: they are written in the language of the `sw-language-id` header.
+- Not covered yet (next resources): Back in Stock subscriptions and actions, Variant Creator actions (merge/detach/move), Open Carts, Search (synonyms, boosting), Lexikon, Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
+
 ## Name resolution (core feature)
 
 Every field that takes a Shopware ID is a `resourceLocator` with these modes:
@@ -146,7 +162,7 @@ How the token is handled, and why:
 
 - **Unit tests:** vitest under `test/`. Cover pure functions (URL, errors, criteria, resolver) and `preAuthentication` with a mocked `helpers.httpRequest`. For operations, mock `IExecuteFunctions` and stub `helpers.httpRequestWithAuthentication`. Use `nock` for transport-level tests.
 - **Integration against a real shop:** run the compiled node with a minimal `IExecuteFunctions` stub that forwards `httpRequestWithAuthentication` to `fetch`. Cover create → get → update → upsert → getAll → delete and count token requests (must be 1).
-- **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
+- **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The Novastrix plugins must be installed there for plugin tests (`bin/console plugin:install -n --activate <Name>` inside the container). The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
 - **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
 
 ## Compatibility

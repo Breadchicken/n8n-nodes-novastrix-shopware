@@ -32,6 +32,8 @@ export interface EntityConfig {
 	adminPath?: string;
 	/** Associations loaded for display (disables `includes`). */
 	associations?: IDataObject;
+	/** Plugin that provides the entity; used for a clear error when it is missing. */
+	plugin?: string;
 	/** Extra headers for lookups, e.g. inheritance for variants. */
 	headers?: Record<string, string>;
 	/** Placeholder of the "By Name" mode. */
@@ -280,6 +282,37 @@ export const ENTITIES = {
 		sortField: 'salutationKey',
 		namePlaceholder: 'e.g. mr, mrs or not_specified',
 		nameModeLabel: 'By Key or Name',
+	},
+	productStream: simpleNamed(
+		'product_stream',
+		'dynamic product group',
+		'sw/product/stream/detail/{id}',
+		'e.g. Sale items',
+	),
+
+	/* ------------------------------ Novastrix plugins ----------------------------- */
+	supplier: {
+		entity: 'pflaum_supplier',
+		label: 'supplier',
+		displayFields: ['name', 'number'],
+		display: (r: IDataObject) => withSuffix(String(r.name), r.number),
+		lookups: [equals('number'), equals('name')],
+		searchFields: ['number', 'name'],
+		sortField: 'name',
+		plugin: 'Novastrix Supplier Management',
+		namePlaceholder: 'e.g. SUP-1001 or supplier name',
+		nameModeLabel: 'By Number or Name',
+	},
+	configurator: {
+		entity: 'novastrix_configurator',
+		label: 'configurator',
+		displayFields: ['name', 'productId', 'active'],
+		display: (r: IDataObject) => String(r.name),
+		lookups: [equals('name')],
+		searchFields: ['name'],
+		sortField: 'name',
+		plugin: 'Novastrix Product Configurator',
+		namePlaceholder: 'e.g. PC Bundle',
 	},
 } satisfies Record<string, EntityConfig>;
 

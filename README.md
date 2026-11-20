@@ -37,7 +37,8 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 
 | Resource | Operations |
 |---|---|
-| Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update |
+| Configurator (Novastrix) | Create, Delete, Get, Get Many, Update |
+| Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit |
 | System | Get Version |
 
 More resources are in progress.
@@ -71,6 +72,22 @@ Matching ignores case. If a value matches more than one record, the node stops w
 - **Tags** that do not exist fail by default; enable *Create Missing Tags* to create them.
 - **Raw Fields (JSON)** lets you set any product field the UI does not cover.
 - **Language** (option) reads and writes translated fields such as name and description in that language.
+
+## Novastrix plugins
+
+The node fully supports the product data of the [Novastrix](https://novastrix.com) Shopware plugins. Each field only takes effect if the plugin is installed; if a plugin is missing, the node says which one.
+
+| Plugin | Support |
+|---|---|
+| Deficiency Description | Product: *Deficiency: Is Defective Item*, *Deficiency: Description* |
+| EU Warranty Label | Product: *EU Guarantee: Confirmed*, *EU Guarantee: Months*. Uses the native Shopware fields on 6.7.14+ and the plugin fields before; durations are validated (30–600 months, half-year steps). |
+| SEO | Product: *SEO: FAQ* (question/answer pairs, the node builds the HTML), *SEO: Price Valid Until*, *SEO: Disable Product Schema* |
+| Back in Stock | Product: *Back in Stock: Disable Alerts*, *Back in Stock: Pre-Launch* |
+| Supplier Management | Product: suppliers with purchase price, stock, delivery time, priority (suppliers by number or name), selection strategy |
+| Product Dashboard | Product: *Run Quality Audit*, *Get Quality Audit* (score, grade, failed criteria, priority) |
+| Product Configurator | Resource *Configurator*: steps as form fields, products by number or name, dependencies by step name, or the raw JSON |
+
+Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create or Update and Update. To read it, select `customFields` or the plugin associations (e.g. `pflaumSuppliers`) in Get.
 
 ## Compatibility
 

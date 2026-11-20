@@ -2,9 +2,15 @@ import type { IDataObject, IExecuteFunctions, INodeParameterResourceLocator } fr
 import { NodeOperationError } from 'n8n-workflow';
 
 import { DEFAULT_CURRENCY_ID } from '../../shared/entities';
+import { toNodeError } from '../../shared/errors';
 import { contextHeaders } from '../../shared/options';
 import type { ExecutionState } from '../../shared/state';
-import { shopwareApiRequest, shopwareSearch, shopwareSearchPage } from '../../shared/transport';
+import {
+	httpStatus,
+	shopwareApiRequest,
+	shopwareSearch,
+	shopwareSearchPage,
+} from '../../shared/transport';
 import {
 	generateId,
 	grossToNet,
@@ -12,6 +18,8 @@ import {
 	parseJsonParameter,
 	splitList,
 } from '../../shared/utils';
+import type { PluginWrite } from './plugins';
+import { buildPluginWrite, PLUGINS } from './plugins';
 
 /** Product fields copied 1:1 from the UI into the payload. */
 const SCALAR_FIELDS = [
@@ -135,15 +143,22 @@ export async function executeProduct(
 			const data = {
 				...(this.getNodeParameter('additionalFields', i, {}) as IDataObject),
 				...readRequiredFields(this, i),
-			};
+				novastrixFields: this.getNodeParameter('novastrixFields', i, {}),
+			} as IDataObject;
 			return await createProduct.call(this, state, data, options);
 		}
 
 		case 'update': {
 			const id = await resolveProduct.call(this, state, i);
 			const options = this.getNodeParameter('options', i, {}) as IDataObject;
-			const data = this.getNodeParameter('updateFields', i, {}) as IDataObject;
-			if (Object.keys(data).length === 0) {
+			const data = {
+				...(this.getNodeParameter('updateFields', i, {}) as IDataObject),
+				novastrixFields: this.getNodeParameter('novastrixFields', i, {}),
+			} as IDataObject;
+			if (
+				Object.keys(data).length === 1 &&
+				Object.keys(data.novastrixFields as IDataObject).length === 0
+			) {
 				throw new NodeOperationError(this.getNode(), 'Add at least one field to update', {
 					itemIndex: i,
 				});
@@ -156,7 +171,8 @@ export async function executeProduct(
 			const data = {
 				...(this.getNodeParameter('additionalFields', i, {}) as IDataObject),
 				...readRequiredFields(this, i),
-			};
+				novastrixFields: this.getNodeParameter('novastrixFields', i, {}),
+			} as IDataObject;
 			const existing = await shopwareSearchPage.call(this, 'product', {
 				filter: [{ type: 'equals', field: 'productNumber', value: data.productNumber }],
 				includes: { product: ['id'] },
@@ -172,6 +188,17 @@ export async function executeProduct(
 			const id = await resolveProduct.call(this, state, i);
 			await shopwareApiRequest.call(this, 'DELETE', `/product/${id}`);
 			return { id, deleted: true };
+		}
+
+		case 'runAudit': {
+			const id = await resolveProduct.call(this, state, i);
+			await runAudit.call(this, id, i);
+			return await getAudit.call(this, id, i);
+		}
+
+		case 'getAudit': {
+			const id = await resolveProduct.call(this, state, i);
+			return await getAudit.call(this, id, i);
 		}
 
 		default:
@@ -269,7 +296,7 @@ async function createProduct(
 	options: IDataObject,
 ): Promise<IDataObject> {
 	const id = generateId();
-	const payload = await buildPayload.call(this, state, data, options);
+	const { payload, afterWrite } = await buildPayload.call(this, state, data, options);
 	payload.id = id;
 
 	if (!payload.price) {
@@ -280,6 +307,9 @@ async function createProduct(
 		body: payload,
 		headers: await contextHeaders(state.resolver, options),
 	});
+	if (afterWrite) {
+		await afterWrite(id);
+	}
 
 	return (await getProduct.call(this, state, id, options)) ?? { id };
 }
@@ -291,12 +321,17 @@ async function updateProduct(
 	data: IDataObject,
 	options: IDataObject,
 ): Promise<IDataObject> {
-	const payload = await buildPayload.call(this, state, data, options, { id });
+	const { payload, afterWrite } = await buildPayload.call(this, state, data, options, { id });
 
-	await shopwareApiRequest.call(this, 'PATCH', `/product/${id}`, {
-		body: payload,
-		headers: await contextHeaders(state.resolver, options),
-	});
+	if (Object.keys(payload).length > 0) {
+		await shopwareApiRequest.call(this, 'PATCH', `/product/${id}`, {
+			body: payload,
+			headers: await contextHeaders(state.resolver, options),
+		});
+	}
+	if (afterWrite) {
+		await afterWrite(id);
+	}
 
 	return (await getProduct.call(this, state, id, options)) ?? { id };
 }
@@ -311,7 +346,7 @@ async function buildPayload(
 	data: IDataObject,
 	options: IDataObject,
 	existing?: ExistingProduct,
-): Promise<IDataObject> {
+): Promise<{ payload: IDataObject; afterWrite?: PluginWrite['afterWrite'] }> {
 	const { resolver } = state;
 	const payload: IDataObject = {};
 
@@ -366,8 +401,18 @@ async function buildPayload(
 		payload.tags = await resolveTags(state, tagNames, options.createMissingTags === true);
 	}
 
-	const customFields = parseJsonParameter(data.customFields, 'Custom Fields (JSON)');
-	if (customFields && Object.keys(customFields).length > 0) {
+	const plugin = await buildPluginWrite.call(
+		this,
+		state,
+		data.novastrixFields as IDataObject | undefined,
+	);
+	Object.assign(payload, plugin.fields);
+
+	const customFields = {
+		...plugin.customFields,
+		...(parseJsonParameter(data.customFields, 'Custom Fields (JSON)') ?? {}),
+	};
+	if (Object.keys(customFields).length > 0) {
 		payload.customFields = customFields;
 	}
 
@@ -376,7 +421,65 @@ async function buildPayload(
 		Object.assign(payload, rawFields);
 	}
 
-	return payload;
+	return { payload, afterWrite: plugin.afterWrite };
+}
+
+/** Re-audits one product with the Product Dashboard plugin. */
+async function runAudit(this: IExecuteFunctions, productId: string, i: number): Promise<void> {
+	try {
+		await shopwareApiRequest.call(
+			this,
+			'POST',
+			'/_action/novastrix-product-dashboard/audit/product',
+			{
+				body: { productId },
+				requiresPlugin: PLUGINS.dashboard,
+			},
+		);
+	} catch (error) {
+		if (httpStatus(error) === 409) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'The Product Dashboard has no completed audit yet',
+				{
+					itemIndex: i,
+					description:
+						'Single products can only be re-audited after a full audit run. Start one in the Shopware Administration (Product Dashboard) and try again.',
+				},
+			);
+		}
+		throw toNodeError(this, error, i);
+	}
+}
+
+/** Latest Product Dashboard audit of a product (score, grade, failed criteria, priority). */
+async function getAudit(
+	this: IExecuteFunctions,
+	productId: string,
+	i: number,
+): Promise<IDataObject> {
+	const records = await shopwareSearchPage.call(
+		this,
+		'novastrix_product_audit',
+		{
+			filter: [{ type: 'equals', field: 'productId', value: productId }],
+			sort: [{ field: 'computedAt', order: 'DESC' }],
+			limit: 1,
+		},
+		undefined,
+		PLUGINS.dashboard,
+	);
+	if (records.length === 0) {
+		throw new NodeOperationError(
+			this.getNode(),
+			`No quality audit found for product ${productId}`,
+			{
+				itemIndex: i,
+				description: 'Run "Run Quality Audit" or a full audit in the Product Dashboard first.',
+			},
+		);
+	}
+	return records[0];
 }
 
 async function applyPrices(

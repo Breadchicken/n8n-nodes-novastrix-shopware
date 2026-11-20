@@ -45,7 +45,13 @@ export function createListSearch(key: EntityKey): ListSearchMethod {
 			criteria.sort = [{ field: config.sortField, order: 'ASC', naturalSorting: true }];
 		}
 
-		const records = await shopwareSearchPage.call(this, config.entity, criteria, config.headers);
+		const records = await shopwareSearchPage.call(
+			this,
+			config.entity,
+			criteria,
+			config.headers,
+			config.plugin,
+		);
 
 		const results = await Promise.all(
 			records.map(async (record) => ({

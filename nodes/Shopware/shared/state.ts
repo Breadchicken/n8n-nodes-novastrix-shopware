@@ -1,7 +1,7 @@
-import type { IExecuteFunctions, INode } from 'n8n-workflow';
+import type { IDataObject, IExecuteFunctions, INode } from 'n8n-workflow';
 
 import type { EntityResolver } from './resolver';
-import { createResolver, shopwareSearchPage } from './transport';
+import { createResolver, shopwareApiRequest, shopwareSearchPage } from './transport';
 
 /**
  * Per-execution state shared by all items of one node run: the name resolver and small caches.
@@ -11,10 +11,13 @@ export interface ExecutionState {
 	node: INode;
 	resolver: EntityResolver;
 	taxRate: (taxId: string) => Promise<number>;
+	/** Whether the shop's schema has a field, e.g. native fields that only exist in newer versions. */
+	hasField: (entity: string, field: string) => Promise<boolean>;
 }
 
 export function createExecutionState(context: IExecuteFunctions): ExecutionState {
 	const taxRates = new Map<string, Promise<number>>();
+	let schema: Promise<Record<string, { properties?: IDataObject }>> | undefined;
 
 	return {
 		node: context.getNode(),
@@ -34,6 +37,16 @@ export function createExecutionState(context: IExecuteFunctions): ExecutionState
 				rate.catch(() => taxRates.delete(taxId));
 			}
 			return await rate;
+		},
+		hasField: async (entity: string, field: string) => {
+			if (!schema) {
+				schema = shopwareApiRequest.call(context, 'GET', '/_info/entity-schema.json') as Promise<
+					Record<string, { properties?: IDataObject }>
+				>;
+				schema.catch(() => (schema = undefined));
+			}
+			const properties = (await schema)[entity]?.properties ?? {};
+			return field in properties;
 		},
 	};
 }

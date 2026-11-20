@@ -20,6 +20,11 @@ export interface ShopwareRequestOptions {
 	body?: IDataObject | IDataObject[];
 	qs?: IDataObject;
 	headers?: Record<string, string>;
+	/**
+	 * Display name of the plugin that provides this route or entity. A 404 is then reported as
+	 * "plugin not installed" instead of a generic "Not Found".
+	 */
+	requiresPlugin?: string;
 }
 
 /**
@@ -64,8 +69,41 @@ export async function shopwareApiRequest<T = IDataObject>(
 			requestOptions,
 		)) as T;
 	} catch (error) {
+		if (options.requiresPlugin && httpStatus(error) === 404) {
+			throw new NodeApiError(this.getNode(), error as JsonObject, {
+				message: `This operation needs the ${options.requiresPlugin} plugin`,
+				description: `Shopware answered 404 for ${method} /api${path}. Make sure the ${options.requiresPlugin} plugin is installed and active in the shop.`,
+			});
+		}
 		throw toNodeApiError(this, error);
 	}
+}
+
+/** HTTP status of a failed request, wherever the n8n request helper put it. */
+export function httpStatus(error: unknown): number | undefined {
+	const err = error as {
+		httpCode?: string;
+		status?: number;
+		statusCode?: number;
+		response?: { status?: number; statusCode?: number };
+		cause?: { status?: number; response?: { status?: number } };
+	};
+	const candidates = [
+		err.httpCode,
+		err.statusCode,
+		err.status,
+		err.response?.status,
+		err.response?.statusCode,
+		err.cause?.status,
+		err.cause?.response?.status,
+	];
+	for (const candidate of candidates) {
+		const status = Number(candidate);
+		if (Number.isInteger(status) && status >= 100) {
+			return status;
+		}
+	}
+	return undefined;
 }
 
 function toNodeApiError(context: ShopwareContext, error: unknown): NodeApiError {
@@ -113,10 +151,12 @@ export async function shopwareSearchPage(
 	entity: string,
 	criteria: IDataObject,
 	headers?: Record<string, string>,
+	requiresPlugin?: string,
 ): Promise<IDataObject[]> {
 	const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entityPath(entity)}`, {
 		body: criteria,
 		headers,
+		requiresPlugin,
 	})) as ShopwareSearchResponse;
 	return response.data ?? [];
 }
@@ -145,6 +185,7 @@ export async function shopwareSearch(
 	criteria: IDataObject = {},
 	maxItems?: number,
 	headers?: Record<string, string>,
+	requiresPlugin?: string,
 ): Promise<IDataObject[]> {
 	const pageSize = Math.min(maxItems ?? 500, 500);
 	const results: IDataObject[] = [];
@@ -154,6 +195,7 @@ export async function shopwareSearch(
 		const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entityPath(entity)}`, {
 			body: { ...criteria, page, limit: pageSize, 'total-count-mode': 'none' },
 			headers,
+			requiresPlugin,
 		})) as ShopwareSearchResponse;
 
 		const data = response.data ?? [];

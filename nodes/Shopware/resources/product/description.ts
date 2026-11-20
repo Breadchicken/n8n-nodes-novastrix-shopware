@@ -2,6 +2,7 @@ import type { INodeProperties } from 'n8n-workflow';
 
 import { entityLocator, entityLocatorList } from '../../shared/locators';
 import { languageOption } from '../../shared/options';
+import { novastrixProductFields } from './plugins';
 
 const show = (operation: string[]) => ({ show: { resource: ['product'], operation } });
 
@@ -42,6 +43,19 @@ export const productOperations: INodeProperties[] = [
 				value: 'getAll',
 				description: 'Get many products',
 				action: 'Get many products',
+			},
+			{
+				name: 'Get Quality Audit',
+				value: 'getAudit',
+				description:
+					'Get the latest quality audit (requires the Novastrix Product Dashboard plugin)',
+				action: 'Get the quality audit of a product',
+			},
+			{
+				name: 'Run Quality Audit',
+				value: 'runAudit',
+				description: 'Re-audit a product now (requires the Novastrix Product Dashboard plugin)',
+				action: 'Run a quality audit for a product',
 			},
 			{
 				name: 'Update',
@@ -337,7 +351,7 @@ export const productFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
 	/*                   product:get / product:update / product:delete            */
 	/* -------------------------------------------------------------------------- */
-	productLocator(['get', 'update', 'delete']),
+	productLocator(['get', 'update', 'delete', 'getAudit', 'runAudit']),
 	{
 		displayName: 'Update Fields',
 		name: 'updateFields',
@@ -381,6 +395,11 @@ export const productFields: INodeProperties[] = [
 				...productDataFields(),
 			] as INodeProperties[]
 		).sort((a, b) => a.displayName.localeCompare(b.displayName)),
+	},
+
+	{
+		...novastrixProductFields,
+		displayOptions: show(['create', 'upsert', 'update']),
 	},
 
 	/* -------------------------------------------------------------------------- */
