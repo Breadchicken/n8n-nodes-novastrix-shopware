@@ -2,6 +2,7 @@ import type {
 	IDataObject,
 	IExecuteFunctions,
 	IHttpRequestMethods,
+	IHookFunctions,
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	JsonObject,
@@ -16,7 +17,7 @@ import { normalizeShopUrl } from './url';
 
 export const CREDENTIAL_NAME = 'shopwareAdminApi';
 
-type ShopwareContext = IExecuteFunctions | ILoadOptionsFunctions;
+type ShopwareContext = IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions;
 
 export interface ShopwareRequestOptions {
 	body?: IDataObject | IDataObject[];

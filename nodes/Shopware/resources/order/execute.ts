@@ -481,9 +481,10 @@ export function output(order: IDataObject, simplify: boolean): IDataObject {
 		id: order.id,
 		orderNumber: order.orderNumber,
 		orderDate: order.orderDateTime,
-		status: technicalName(order),
-		paymentStatus: transaction ? technicalName(transaction) : undefined,
-		deliveryStatus: delivery ? technicalName(delivery) : undefined,
+		// Unknown (state not loaded, e.g. in webhook payloads) stays undefined instead of "".
+		status: technicalName(order) || undefined,
+		paymentStatus: technicalName(transaction) || undefined,
+		deliveryStatus: technicalName(delivery) || undefined,
 		amountTotal: order.amountTotal,
 		amountNet: order.amountNet,
 		shippingTotal: order.shippingTotal,

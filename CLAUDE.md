@@ -15,7 +15,7 @@ Goal: be the most complete Shopware node for n8n. Existing packages (`@solution2
 3. Free DAL criteria search (filters, sorting, associations, aggregations).
 4. Bulk writes via `/_action/sync`.
 5. State machine transitions (order, transaction, delivery) and documents.
-6. A proper webhook trigger.
+6. A proper webhook trigger (`Shopware Trigger`).
 7. Language context (`sw-language-id`) and a "Custom API Call" using the same credential.
 
 ## Hard rules
@@ -163,6 +163,18 @@ How the token is handled, and why:
 - Documents: `POST /_action/order/document/{type}/create` with `[{ orderId, fileType: 'pdf', static: false, config: { documentNumber, documentDate, documentComment }, referencedDocumentId }]` returns `{ data: [{ documentId }], errors: { <orderId>: [...] } }` (errors come with HTTP 200!). Download: `GET /_action/document/{id}/{deepLinkCode}?download=1` via `shopwareFileRequest`. Storno/credit notes need `referencedDocumentId` (an invoice). `deepLinkCode` is not returned in the output.
 - Binary output: executors return `new OutputItems(items)` (`shared/output.ts`); the node adds `pairedItem`.
 - Test orders: no demodata in the dev shop (`shopware/dev-tools` missing). Create real guest orders through the Store API checkout (`account/register` with `guest: true` -> `checkout/cart/line-item` -> `checkout/order`).
+
+## Trigger (webhooks)
+
+`nodes/ShopwareTrigger/` (`ShopwareTrigger.node.ts`, pure helpers in `events.ts`). Facts verified on 6.7.16:
+
+- Webhooks created through the Admin API (`POST /webhook`, `{id, name, eventName, url, onlyLiveVersion}`) have no app, so Shopware **does not sign them** (signing uses the app secret). The node adds a random `n8nToken` query parameter and checks it with `timingSafeEqual`; state (token, URL, webhook IDs per event) lives in `getWorkflowStaticData('node')`.
+- One webhook per event. Names are `n8n <workflowId> <nodeId> <live|test> <event>`; `create`/`delete` also remove every webhook with this prefix, so lost static data or changed events leave no orphans, and test listening never touches the live webhooks.
+- `uniq.webhook.name` is `(name, app_id)`; `app_id` is NULL for us, so uniqueness is up to the node.
+- Shopware 6.7 validates webhook URLs (`WebhookUrlWriteValidator`): only HTTPS and public IPs, unless `shopware.app_system.enable_url_validation: false` (dev shop: `config/packages/zz_dev_webhook.yaml` in the container, not in any repo). The error text contains "network policy"; `explainCreateError` turns it into a helpful message.
+- Event list: business events from `GET /_info/events.json`; entity events `<entity>.written|deleted` only for entities tagged `shopware.entity.hookable` (11 in 6.7, hard-coded in `HOOKABLE_ENTITIES`); `#[NotHookable]` events are never delivered and are filtered out.
+- Payloads: entity events send `data.payload` = list of `{entity, operation, primaryKey, updatedFields, versionId}`; business events send the event data, e.g. `{order: {...}}` with transactions, deliveries, line items and `deepLinkCode` (state of non-related deliveries is not loaded, so simplified statuses can be undefined).
+- Headless test: import a workflow with `CUSTOM.shopwareTrigger`, `n8n publish:workflow --id=...` (running server applies it within ~20 s; re-importing a workflow unpublishes it, which calls `delete`), forward items with an HTTP Request node to a local receiver (`127.0.0.1`, not `localhost`: n8n resolves it to IPv6).
 
 ## Shopware API gotchas
 

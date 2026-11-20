@@ -10,9 +10,9 @@ Planned highlights:
 - **Searchable pickers** for all entities, with real pagination even in large catalogs.
 - **Full DAL criteria search**: filters, sorting, associations and aggregations.
 - **Bulk create, update and delete** through Shopware's sync API.
-- A **webhook trigger** for Shopware events.
+- A **Shopware Trigger** that starts workflows on Shopware events and manages its webhooks itself.
 
-[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Compatibility](#compatibility) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
+[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Trigger](#trigger) · [Compatibility](#compatibility) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
 
 ## Installation
 
@@ -100,6 +100,39 @@ The node fully supports the [Novastrix Shopware plugins](https://novastrix.com/s
 
 Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create or Update and Update. To read it, select `customFields` or the plugin associations (e.g. `pflaumSuppliers`) in Get.
 
+## Trigger
+
+**Shopware Trigger** starts a workflow when something happens in the shop. Pick one or more events:
+
+- **Business events from your shop**, including plugin events: *Order Placed*, *Customer Registered*, *Newsletter Registered*, *Contact Form Sent*, ...
+- **Status changes**: *Payment Status Changed to Paid*, *Delivery Status Changed to Shipped*, *Order Status Changed to Cancelled*, and the matching "Changed From" events.
+- **Record changes**: *Product Created or Updated*, *Order Deleted*, ... for category, customer, customer address, document, media, order, order address, product, product price, sales channel and sales channel domain.
+
+When you activate the workflow, the node creates one Shopware webhook per event. When you deactivate it, the node deletes them again. Nothing needs to be set up in the Shopware Administration, but the integration needs permission to manage webhooks.
+
+Output:
+
+- **Record changes:** one item per changed record, with `event`, `entity`, `operation` (`insert`, `update`, `delete`), `id` and `updatedFields`. Use the Shopware node to load the full record.
+- **Business events and status changes:** one item with the event data, e.g. `order` or `customer`. With **Simplify** (default), an order is flattened like in the Order resource. It then also leaves out the `deepLinkCode`.
+
+Security: Shopware signs webhooks only for apps, not for integrations. The node therefore adds a random secret token to the webhook URL and rejects calls without it (HTTP 401).
+
+### Reachability
+
+Shopware must be able to reach n8n:
+
+- **Shopware 6.7** sends webhooks only to **public HTTPS** addresses. Run n8n under a public HTTPS URL (n8n setting `WEBHOOK_URL`). Otherwise activation fails with "Shopware does not accept the webhook URL".
+- **Local test shop in Docker:** set **Options > Webhook Base URL** to `http://host.docker.internal:5678`. Also allow private HTTP targets in the shop (for test shops only):
+  ```yaml
+  # config/packages/zz_dev_webhook.yaml
+  shopware:
+      app_system:
+          enable_url_validation: false
+  ```
+  Then run `bin/console cache:clear`.
+- Shopware sends webhooks through its message queue. If the shop has no worker running (`messenger:consume`) and the admin worker is disabled, events arrive late or not at all.
+- Shopware deactivates a webhook after repeated delivery errors, e.g. while n8n is down. Deactivating and activating the workflow creates it again.
+
 ## Compatibility
 
 - Shopware 6.6 and 6.7 (tested against 6.7.16)
@@ -136,6 +169,7 @@ The quickstart creates a separate n8n home in `~/.n8n-novastrix-shopware` with t
 | Shopware 5 · Order processing | invoice PDF for the newest order. Tracking code and payment status are included but disabled | yes |
 | Shopware 6 · Back in Stock | subscriptions, demand, recovered revenue, failed mails (Novastrix plugin) | no |
 | Shopware 7 · Configurator and audit | configurators and product quality audit (Novastrix plugins) | no |
+| Shopware 8 · Trigger | starts on new orders and paid orders (see [Reachability](#reachability)) | no |
 
 Open a workflow and click **Execute workflow**. Workflows marked "writes data" change your shop, so use a test shop for them.
 

@@ -45,7 +45,8 @@
 			"dist/credentials/ShopwareAdminApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/Shopware/Shopware.node.js"
+			"dist/nodes/Shopware/Shopware.node.js",
+			"dist/nodes/ShopwareTrigger/ShopwareTrigger.node.js"
 		]
 	},
 	"devDependencies": {
