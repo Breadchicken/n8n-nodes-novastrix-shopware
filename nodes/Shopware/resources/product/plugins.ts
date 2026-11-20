@@ -30,7 +30,6 @@ export const PLUGINS = {
 	supplier: 'Novastrix Supplier Management',
 	dashboard: 'Novastrix Product Dashboard',
 	configurator: 'Novastrix Product Configurator',
-	variantCreator: 'Novastrix Variant Creator',
 } as const;
 
 /** Custom field names, as defined by the plugins. */

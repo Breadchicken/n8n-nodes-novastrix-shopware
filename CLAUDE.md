@@ -93,7 +93,7 @@ The node must fully support the author's own Shopware plugins (source: `~/Docume
   - Product Dashboard: `audit/product` returns 409 `no_finished_run` until one full audit run has finished.
   - Configurator: one configurator per product and position (plugin validates, code `NOVASTRIX_CONFIGURATOR__DUPLICATE_POSITION`); `productId` is a plain string, not an association; `configuration` is one JSON column, so updates merge into the stored value.
   - Custom fields of plugins are translated: they are written in the language of the `sw-language-id` header.
-  - Variant Creator: use the all-in-one `compose` route for merges. It validates first and never writes partially; `dry_run` skips the OpenAI call. Errors come as `{ success: false, message, errors[], conflicts[] }`, which `formatShopwareErrors` understands. `auto_resolve` only applies when a new parent is created. Known plugin bug (2026-11-20): `detach` fails with "taxId / price should not be blank" when the variant has its own tax and price, because the plugin only forwards inherited values.
+- Intentionally not supported: **Variant Creator** (still experimental; a draft resource was built and removed on 2026-11-20, see git history of commit 972193a).
 - Not covered yet (next resources): Back in Stock subscriptions and actions, Open Carts, Search (synonyms, boosting), Lexikon, Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
 
 ## Name resolution (core feature)

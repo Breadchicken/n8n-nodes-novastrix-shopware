@@ -15,8 +15,6 @@ import { productFields, productOperations } from './resources/product/descriptio
 import { executeProduct } from './resources/product/execute';
 import { systemOperations } from './resources/system/description';
 import { executeSystem } from './resources/system/execute';
-import { variantFields, variantOperations } from './resources/variant/description';
-import { executeVariant } from './resources/variant/execute';
 import { toNodeError } from './shared/errors';
 import { createExecutionState } from './shared/state';
 
@@ -64,12 +62,6 @@ export class Shopware implements INodeType {
 						name: 'System',
 						value: 'system',
 					},
-					{
-						name: 'Variant (Novastrix)',
-						value: 'variant',
-						description:
-							'Merge, detach and move variants with the Novastrix Variant Creator plugin',
-					},
 				],
 				default: 'product',
 			},
@@ -78,8 +70,6 @@ export class Shopware implements INodeType {
 			...productOperations,
 			...productFields,
 			...systemOperations,
-			...variantOperations,
-			...variantFields,
 		],
 	};
 
@@ -109,9 +99,6 @@ export class Shopware implements INodeType {
 						break;
 					case 'system':
 						responseData = await executeSystem.call(this, operation, i);
-						break;
-					case 'variant':
-						responseData = await executeVariant.call(this, state, operation, i);
 						break;
 					default:
 						throw new NodeOperationError(this.getNode(), `Unknown resource "${resource}"`, {

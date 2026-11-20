@@ -20,8 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Configurator resource (Novastrix Product Configurator) with step editor, name resolution and dependencies.
 - Clear error when a required Novastrix plugin is not installed.
 - Product Get/Get Many: associations are loaded dynamically from the entity schema, including associations added by plugins.
-- Variant resource (Novastrix Variant Creator): merge standalone products into variants of an existing or an AI-created parent (with dry run and conflict handling), detach, move, list variants with their options, and add or remove configurator options.
-- Error messages of Novastrix plugin routes (validation errors per product, differing field values) are shown in full.
+- Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.
 
 ### Changed
 
