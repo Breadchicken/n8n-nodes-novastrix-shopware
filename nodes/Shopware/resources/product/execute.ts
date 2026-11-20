@@ -225,9 +225,13 @@ function readCriteria(options: IDataObject): IDataObject {
 		criteria.associations = Object.fromEntries(associations.map((name) => [name, {}]));
 	}
 
+	// `includes` filters the response, associations included: selected associations must be
+	// listed as fields too, otherwise Shopware strips them from the output.
 	const fields = splitList(options.fields);
 	if (fields.length > 0) {
-		criteria.includes = { product: Array.from(new Set(['id', ...fields])) };
+		criteria.includes = {
+			product: Array.from(new Set(['id', ...fields, ...(associations ?? [])])),
+		};
 	}
 
 	const sort = (options.sort as { items?: IDataObject[] } | undefined)?.items;

@@ -139,6 +139,8 @@ How the token is handled, and why:
 - `visibilities` are unique per product and sales channel: check existing ones before adding (see product `existingVisibilities`).
 - Prices are an array per currency; the default-currency entry (`DEFAULT_CURRENCY_ID`) is mandatory. `listPrice` lives inside the price entry.
 - Error titles are generic ("Bad Request"); the useful text is in `detail`.
+- `includes` filters associations too: when limiting fields, add the selected association names to the includes list or they disappear from the output.
+- Field lists for dropdowns come from `GET /_info/entity-schema.json` (~750 KB, all entities); use `createFieldLoader(entity)` in `loadOptions/index.ts` instead of hard-coding fields.
 
 ## Testing
 

@@ -8,6 +8,7 @@ import type {
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { listSearch } from './listSearch';
+import { loadOptions } from './loadOptions';
 import { productFields, productOperations } from './resources/product/description';
 import { executeProduct } from './resources/product/execute';
 import { systemOperations } from './resources/system/description';
@@ -65,6 +66,7 @@ export class Shopware implements INodeType {
 
 	methods = {
 		listSearch,
+		loadOptions,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

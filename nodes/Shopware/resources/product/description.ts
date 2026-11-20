@@ -504,13 +504,15 @@ export const productFields: INodeProperties[] = [
 				],
 			},
 			{
-				displayName: 'Fields',
+				displayName: 'Field Names or IDs',
 				name: 'fields',
-				type: 'string',
-				default: '',
-				placeholder: 'e.g. productNumber,name,stock',
+				type: 'multiOptions',
+				typeOptions: {
+					loadOptionsMethod: 'getProductFields',
+				},
+				default: [],
 				description:
-					'Comma-separated list of product fields to return (the ID is always included). Leave empty to return all fields.',
+					'Product fields to return. The ID and selected associations are always included. Leave empty to return all fields. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Inherit From Parent',
