@@ -7,7 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- **Shopware Trigger** node: business events of the shop (incl. plugins), status changes and record changes; creates and deletes its Shopware webhooks automatically, secures them with a secret URL token and simplifies orders in the payload.
+- **Shopware Trigger** node: business events of the shop (incl. plugins), status changes and record changes; creates and deletes its Shopware webhooks automatically, secures them with a secret URL token and simplifies orders in the payload. Record changes list the changed fields without technical noise and include their new values.
 - `npm run quickstart`: local n8n with a login, a Shopware credential from `.env` and eight example workflows (`examples/workflows`) covering every resource.
 - `Shopware Admin API` credential (integration / client_credentials) with cached, auto-refreshing access token.
 - `Shopware` node with the `System > Get Version` operation to verify connectivity.

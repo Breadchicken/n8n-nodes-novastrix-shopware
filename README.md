@@ -112,7 +112,10 @@ When you activate the workflow, the node creates one Shopware webhook per event.
 
 Output:
 
-- **Record changes:** one item per changed record, with `event`, `entity`, `operation` (`insert`, `update`, `delete`), `id` and `updatedFields`. Use the Shopware node to load the full record.
+- **Record changes:** one item per changed record, with `event`, `entity`, `operation` (`insert`, `update`, `delete`), `id`, `changedFields` and `changes`. Example for a stock update: `changedFields: ["stock", "availableStock"]`, `changes: {"stock": 11, "availableStock": 11}`.
+  - `changedFields` leaves out the technical fields Shopware lists on every write (version IDs, `updatedAt`, `id`).
+  - `changes` holds the **new** values. The node loads them right after the event, with one API call per webhook (option *Include Changed Values*). Shopware does not send old values. If you need them, keep the last value yourself, e.g. in an n8n Data Table.
+  - With *Simplify* off, the raw `updatedFields` and `versionId` are included as well.
 - **Business events and status changes:** one item with the event data, e.g. `order` or `customer`. With **Simplify** (default), an order is flattened like in the Order resource. It then also leaves out the `deepLinkCode`.
 
 Security: Shopware signs webhooks only for apps, not for integrations. The node therefore adds a random secret token to the webhook URL and rejects calls without it (HTTP 401).

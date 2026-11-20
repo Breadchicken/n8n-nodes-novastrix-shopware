@@ -5,6 +5,7 @@ import type {
 	IHookFunctions,
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
+	IWebhookFunctions,
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
@@ -17,7 +18,11 @@ import { normalizeShopUrl } from './url';
 
 export const CREDENTIAL_NAME = 'shopwareAdminApi';
 
-type ShopwareContext = IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions;
+type ShopwareContext =
+	| IExecuteFunctions
+	| ILoadOptionsFunctions
+	| IHookFunctions
+	| IWebhookFunctions;
 
 export interface ShopwareRequestOptions {
 	body?: IDataObject | IDataObject[];

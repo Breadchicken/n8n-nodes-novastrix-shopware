@@ -89,6 +89,20 @@ export function eventOptions(businessEvents: string[]): INodePropertyOptions[] {
 		.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Fields Shopware lists on every write (version keys, timestamps, the ID itself). They say
+ * nothing about what the user changed.
+ */
+export function isTechnicalField(field: string): boolean {
+	return (
+		field === 'id' ||
+		field === 'versionId' ||
+		field.endsWith('VersionId') ||
+		field === 'createdAt' ||
+		field === 'updatedAt'
+	);
+}
+
 interface WriteResult extends IDataObject {
 	entity?: string;
 	operation?: string;
@@ -121,8 +135,8 @@ export function webhookItems(body: IDataObject, simplify: boolean): IDataObject[
 			...(typeof write.primaryKey === 'string'
 				? { id: write.primaryKey }
 				: { primaryKey: write.primaryKey }),
-			updatedFields: write.updatedFields ?? [],
-			versionId: write.versionId,
+			changedFields: (write.updatedFields ?? []).filter((field) => !isTechnicalField(field)),
+			...(simplify ? {} : { updatedFields: write.updatedFields ?? [], versionId: write.versionId }),
 		}));
 	}
 
@@ -131,4 +145,15 @@ export function webhookItems(body: IDataObject, simplify: boolean): IDataObject[
 		values.order = orderOutput(values.order as IDataObject, true);
 	}
 	return [{ ...meta, ...values }];
+}
+
+/**
+ * Picks the new values of the changed fields from a freshly loaded record. Translated fields
+ * fall back to `translated`, which holds the value in the context language.
+ */
+export function changedValues(record: IDataObject, fields: string[]): IDataObject {
+	const translated = (record.translated as IDataObject | undefined) ?? {};
+	return Object.fromEntries(
+		fields.map((field) => [field, record[field] ?? translated[field] ?? null]),
+	);
 }

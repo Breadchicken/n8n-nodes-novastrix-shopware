@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { eventLabel, eventOptions, webhookItems } from '../nodes/ShopwareTrigger/events';
+import {
+	changedValues,
+	eventLabel,
+	eventOptions,
+	isTechnicalField,
+	webhookItems,
+} from '../nodes/ShopwareTrigger/events';
 
 describe('eventLabel', () => {
 	it('names state changes after the state machine', () => {
@@ -36,6 +42,53 @@ describe('eventOptions', () => {
 	});
 });
 
+describe('changed fields', () => {
+	const fields = [
+		'versionId',
+		'parentVersionId',
+		'productManufacturerVersionId',
+		'stock',
+		'updatedAt',
+		'availableStock',
+		'id',
+		'name',
+		'createdAt',
+	];
+
+	it('drops technical fields', () => {
+		expect(fields.filter((field) => !isTechnicalField(field))).toEqual([
+			'stock',
+			'availableStock',
+			'name',
+		]);
+	});
+
+	it('keeps raw fields without simplify', () => {
+		const [item] = webhookItems(
+			{
+				data: {
+					event: 'product.written',
+					payload: [{ primaryKey: 'a', updatedFields: fields, versionId: 'v' }],
+				},
+			},
+			false,
+		);
+		expect(item.changedFields).toEqual(['stock', 'availableStock', 'name']);
+		expect(item.updatedFields).toEqual(fields);
+		expect(item.versionId).toBe('v');
+	});
+
+	it('reads new values, translated ones as fallback', () => {
+		expect(
+			changedValues({ id: 'a', stock: 13, name: null, translated: { name: 'Shirt' } }, [
+				'stock',
+				'name',
+				'ean',
+			]),
+		).toEqual({ stock: 13, name: 'Shirt', ean: null });
+	});
+});
+
 describe('webhookItems', () => {
 	const source = { url: 'https://shop.example', eventId: 'e1' };
 
@@ -66,10 +119,9 @@ describe('webhookItems', () => {
 				entity: 'product',
 				operation: 'update',
 				id: 'a'.repeat(32),
-				updatedFields: ['stock'],
-				versionId: undefined,
+				changedFields: ['stock'],
 			},
-			expect.objectContaining({ operation: 'insert', id: 'b'.repeat(32), updatedFields: [] }),
+			expect.objectContaining({ operation: 'insert', id: 'b'.repeat(32), changedFields: [] }),
 		]);
 	});
 

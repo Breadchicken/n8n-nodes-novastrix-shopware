@@ -13,7 +13,7 @@ import type {
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { httpStatus, shopwareApiRequest, shopwareSearch } from '../Shopware/shared/transport';
-import { eventOptions, webhookItems } from './events';
+import { changedValues, eventOptions, webhookItems } from './events';
 
 /** Query parameter carrying the per-webhook secret. Shopware signs webhooks only for apps. */
 const TOKEN_PARAMETER = 'n8nToken';
@@ -213,7 +213,48 @@ export class ShopwareTrigger implements INodeType {
 		}
 		const simplify = this.getNodeParameter('simplify', true) as boolean;
 		const items = webhookItems(this.getBodyData(), simplify);
+		const options = this.getNodeParameter('options', {}) as IDataObject;
+		if (options.includeChangedValues !== false) {
+			await addChangedValues(this, items);
+		}
 		return { workflowData: [this.helpers.returnJsonArray(items)] };
+	}
+}
+
+/**
+ * Adds `changes` (new values of `changedFields`) to record-change items, one search per entity.
+ * Never throws: a failing webhook would make Shopware retry and finally deactivate it, so an error
+ * is reported on the items instead.
+ */
+async function addChangedValues(context: IWebhookFunctions, items: IDataObject[]): Promise<void> {
+	const byEntity = new Map<string, IDataObject[]>();
+	for (const item of items) {
+		const fields = item.changedFields as string[] | undefined;
+		if (item.operation === 'delete' || typeof item.id !== 'string' || !fields?.length) {
+			continue;
+		}
+		const entity = String(item.entity);
+		byEntity.set(entity, [...(byEntity.get(entity) ?? []), item]);
+	}
+	for (const [entity, group] of byEntity) {
+		const fields = Array.from(new Set(group.flatMap((item) => item.changedFields as string[])));
+		try {
+			const records = await shopwareSearch.call(context, entity, {
+				ids: group.map((item) => item.id as string),
+				includes: { [entity]: ['id', 'translated', ...fields] },
+			});
+			const byId = new Map(records.map((record) => [record.id as string, record]));
+			for (const item of group) {
+				const record = byId.get(item.id as string);
+				if (record) {
+					item.changes = changedValues(record, item.changedFields as string[]);
+				}
+			}
+		} catch (error) {
+			for (const item of group) {
+				item.changesError = (error as Error).message;
+			}
+		}
 	}
 }
 
