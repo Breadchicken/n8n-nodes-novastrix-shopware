@@ -609,7 +609,7 @@ async function resolveList(
 	return Array.from(new Set(ids));
 }
 
-async function resolveTags(
+export async function resolveTags(
 	state: ExecutionState,
 	names: string[],
 	createMissing: boolean,

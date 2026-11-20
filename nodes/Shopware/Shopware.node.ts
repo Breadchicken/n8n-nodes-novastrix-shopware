@@ -13,6 +13,8 @@ import { executeBackInStock } from './resources/backInStock/execute';
 import { configuratorFields, configuratorOperations } from './resources/configurator/description';
 import { executeConfigurator } from './resources/configurator/execute';
 import { loadOptions } from './loadOptions';
+import { orderFields, orderOperations } from './resources/order/description';
+import { executeOrder } from './resources/order/execute';
 import { productFields, productOperations } from './resources/product/description';
 import { executeProduct } from './resources/product/execute';
 import { systemOperations } from './resources/system/description';
@@ -62,6 +64,10 @@ export class Shopware implements INodeType {
 						description: 'Product configurators of the Novastrix Product Configurator plugin',
 					},
 					{
+						name: 'Order',
+						value: 'order',
+					},
+					{
 						name: 'Product',
 						value: 'product',
 					},
@@ -76,6 +82,8 @@ export class Shopware implements INodeType {
 			...backInStockFields,
 			...configuratorOperations,
 			...configuratorFields,
+			...orderOperations,
+			...orderFields,
 			...productOperations,
 			...productFields,
 			...systemOperations,
@@ -105,6 +113,9 @@ export class Shopware implements INodeType {
 						break;
 					case 'configurator':
 						responseData = await executeConfigurator.call(this, state, operation, i);
+						break;
+					case 'order':
+						responseData = await executeOrder.call(this, state, operation, i);
 						break;
 					case 'product':
 						responseData = await executeProduct.call(this, state, operation, i);

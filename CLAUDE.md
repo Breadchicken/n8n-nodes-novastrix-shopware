@@ -153,6 +153,14 @@ How the token is handled, and why:
 - The shop URL is normalized (`shared/url.ts`): a trailing slash, `/api` or `/admin` is stripped, and `https://` is added if missing.
 - Requests send `Accept: application/json`. Without it some endpoints answer in JSON:API format.
 
+## Orders and state machines
+
+- Status changes use `POST /_action/{order|order_transaction|order_delivery}/{id}/state/{action}` with `{ sendMail, documentTypes }`. `sendMail` is only honoured as strict `false`.
+- Transitions come from `state_machine_transition` (filter `stateMachine.technicalName`: `order.state`, `order_transaction.state`, `order_delivery.state`), cached per run. `shortestPath()` finds the steps.
+- **Multi-step changes only for the order status.** For payment/delivery every intermediate step fires real flows/webhooks (e.g. a fake "refunded"), so only direct transitions are allowed and the error lists the reachable states.
+- Current payment/delivery: `primaryOrderTransactionId` / `primaryOrderDeliveryId` (6.7), otherwise the latest transaction / first delivery. Filters use `primaryOrder*` paths when the schema has them.
+- Test orders: no demodata in the dev shop (`shopware/dev-tools` missing). Create real guest orders through the Store API checkout (`account/register` with `guest: true` -> `checkout/cart/line-item` -> `checkout/order`).
+
 ## Shopware API gotchas
 
 - Variants return `null` for inherited fields unless the request sends `sw-inheritance: 1`.
