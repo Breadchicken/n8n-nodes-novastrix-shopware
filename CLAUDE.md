@@ -45,7 +45,7 @@ Publishing happens **only** from GitHub Actions (`.github/workflows/publish.yml`
 
 ```
 credentials/ShopwareAdminApi.credentials.ts   # the only credential
-icons/shopware.svg, shopware.dark.svg         # themed icons (node + credential)
+icons/novastrix.svg, novastrix.dark.svg       # Novastrix logo (node + credential), same as the plugins
 nodes/Shopware/
   Shopware.node.ts                            # description + execute router
   Shopware.node.json                          # codex (category: Sales)

@@ -25,4 +25,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- Node and credential use the Novastrix logo.
 - Configurator step field *Limit* is now *Max Products Shown*.

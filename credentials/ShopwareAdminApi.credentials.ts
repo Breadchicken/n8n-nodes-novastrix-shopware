@@ -36,8 +36,8 @@ export class ShopwareAdminApi implements ICredentialType {
 	displayName = 'Shopware Admin API';
 
 	icon: Icon = {
-		light: 'file:../icons/shopware.svg',
-		dark: 'file:../icons/shopware.dark.svg',
+		light: 'file:../icons/novastrix.svg',
+		dark: 'file:../icons/novastrix.dark.svg',
 	};
 
 	documentationUrl =

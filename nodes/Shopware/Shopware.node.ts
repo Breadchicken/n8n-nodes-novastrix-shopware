@@ -25,8 +25,8 @@ export class Shopware implements INodeType {
 		displayName: 'Shopware',
 		name: 'shopware',
 		icon: {
-			light: 'file:../../icons/shopware.svg',
-			dark: 'file:../../icons/shopware.dark.svg',
+			light: 'file:../../icons/novastrix.svg',
+			dark: 'file:../../icons/novastrix.dark.svg',
 		},
 		group: ['transform'],
 		version: 1,
