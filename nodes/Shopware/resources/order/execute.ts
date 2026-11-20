@@ -1,10 +1,12 @@
 import type { IDataObject, IExecuteFunctions, INodeParameterResourceLocator } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
+import type { OutputItems } from '../../shared/output';
 import type { ExecutionState } from '../../shared/state';
 import { shopwareApiRequest, shopwareSearch, shopwareSearchPage } from '../../shared/transport';
 import { parseJsonParameter, splitList } from '../../shared/utils';
 import { resolveTags } from '../product/execute';
+import { createDocument, getDocuments } from './documents';
 
 /** Everything needed for the simplified output and for status changes. */
 const ORDER_ASSOCIATIONS: IDataObject = {
@@ -70,7 +72,7 @@ export async function executeOrder(
 	state: ExecutionState,
 	operation: string,
 	i: number,
-): Promise<IDataObject | IDataObject[]> {
+): Promise<IDataObject | IDataObject[] | OutputItems> {
 	const simplify = this.getNodeParameter('simplify', i, true) as boolean;
 
 	switch (operation) {
@@ -179,6 +181,16 @@ export async function executeOrder(
 				...output(await loadOrder.call(this, id, i), simplify),
 				...(statusChange ? { statusChange } : {}),
 			};
+		}
+
+		case 'createDocument': {
+			const id = await resolveOrder.call(this, state, i);
+			return await createDocument.call(this, await loadOrder.call(this, id, i), i);
+		}
+
+		case 'getDocuments': {
+			const id = await resolveOrder.call(this, state, i);
+			return await getDocuments.call(this, await loadOrder.call(this, id, i), i);
 		}
 
 		default:

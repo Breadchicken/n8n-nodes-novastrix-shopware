@@ -81,6 +81,75 @@ export async function shopwareApiRequest<T = IDataObject>(
 	}
 }
 
+export interface ShopwareFile {
+	data: Buffer;
+	fileName?: string;
+	mimeType?: string;
+}
+
+/**
+ * Downloads a file (e.g. a document PDF). Same token handling as `shopwareApiRequest`; the body is
+ * returned as a Buffer together with the file name from `Content-Disposition`.
+ */
+export async function shopwareFileRequest(
+	this: ShopwareContext,
+	path: string,
+	qs?: IDataObject,
+): Promise<ShopwareFile | undefined> {
+	const credentials = await this.getCredentials(CREDENTIAL_NAME);
+	const requestOptions: IHttpRequestOptions = {
+		method: 'GET',
+		url: `${normalizeShopUrl(credentials.url)}/api${path}`,
+		qs,
+		encoding: 'arraybuffer',
+		returnFullResponse: true,
+		json: false,
+	};
+	let response: {
+		body?: ArrayBuffer | Buffer;
+		headers?: Record<string, string>;
+		statusCode?: number;
+	};
+	try {
+		response = (await this.helpers.httpRequestWithAuthentication.call(
+			this,
+			CREDENTIAL_NAME,
+			requestOptions,
+		)) as typeof response;
+	} catch (error) {
+		throw toNodeApiError(this, error);
+	}
+	const body = response.body;
+	if (response.statusCode === 204 || !body || body.byteLength === 0) {
+		return undefined;
+	}
+	const headers = Object.fromEntries(
+		Object.entries(response.headers ?? {}).map(([key, value]) => [key.toLowerCase(), value]),
+	);
+	return {
+		data: Buffer.isBuffer(body) ? body : Buffer.from(body),
+		fileName: fileNameFromDisposition(headers['content-disposition']),
+		mimeType: headers['content-type']?.split(';')[0],
+	};
+}
+
+/** `attachment; filename="a.pdf"; filename*=utf-8''%C3%A4.pdf` -> the (decoded) file name. */
+export function fileNameFromDisposition(header: string | undefined): string | undefined {
+	if (!header) {
+		return undefined;
+	}
+	const extended = /filename\*=(?:utf-8|UTF-8)''([^;]+)/.exec(header);
+	if (extended) {
+		try {
+			return decodeURIComponent(extended[1].trim());
+		} catch {
+			// fall through to the plain name
+		}
+	}
+	const plain = /filename="?([^";]+)"?/.exec(header);
+	return plain?.[1].trim();
+}
+
 /** HTTP status of a failed request, wherever the n8n request helper put it. */
 export function httpStatus(error: unknown): number | undefined {
 	const err = error as {

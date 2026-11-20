@@ -65,10 +65,22 @@ export const orderOperations: INodeProperties[] = [
 				action: 'Change the status of an order',
 			},
 			{
+				name: 'Create Document',
+				value: 'createDocument',
+				description: 'Create an invoice, delivery note or other document and return the PDF',
+				action: 'Create a document for an order',
+			},
+			{
 				name: 'Get',
 				value: 'get',
 				description: 'Get an order',
 				action: 'Get an order',
+			},
+			{
+				name: 'Get Documents',
+				value: 'getDocuments',
+				description: 'List the documents of an order, optionally with their PDFs',
+				action: 'Get the documents of an order',
 			},
 			{
 				name: 'Get Many',
@@ -124,7 +136,14 @@ export const orderFields: INodeProperties[] = [
 		name: 'order',
 		entity: 'order',
 		required: true,
-		displayOptions: show(['get', 'update', 'setStatus', 'addTracking']),
+		displayOptions: show([
+			'get',
+			'update',
+			'setStatus',
+			'addTracking',
+			'createDocument',
+			'getDocuments',
+		]),
 	}),
 
 	/* ------------------------------ setStatus ------------------------------- */
@@ -192,6 +211,120 @@ export const orderFields: INodeProperties[] = [
 		displayOptions: show(['addTracking']),
 	},
 	mailOptions(['addTracking'], { markShipped: [true] }),
+
+	/* ------------------------------- documents ------------------------------ */
+	{
+		displayName: 'Document Type Name or ID',
+		name: 'documentType',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getDocumentTypes' },
+		required: true,
+		default: 'invoice',
+		description:
+			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+		displayOptions: show(['createDocument']),
+	},
+	{
+		displayName: 'If a Document of This Type Exists',
+		name: 'ifExists',
+		type: 'options',
+		options: [
+			{
+				name: 'Use Existing',
+				value: 'useExisting',
+				description: 'Return the latest existing document; safe when the workflow runs again',
+			},
+			{
+				name: 'Create New',
+				value: 'createNew',
+				description: 'Always create a new document with a new number',
+			},
+		],
+		default: 'useExisting',
+		displayOptions: show(['createDocument']),
+	},
+	{
+		displayName: 'Document Fields',
+		name: 'documentFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: show(['createDocument']),
+		options: [
+			{
+				displayName: 'Comment',
+				name: 'documentComment',
+				type: 'string',
+				typeOptions: { rows: 2 },
+				default: '',
+				description: 'Comment printed on the document',
+			},
+			{
+				displayName: 'Document Date',
+				name: 'documentDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Defaults to today',
+			},
+			{
+				displayName: 'Document Number',
+				name: 'documentNumber',
+				type: 'string',
+				default: '',
+				description: "Defaults to the next number of the shop's number range",
+			},
+			{
+				displayName: 'Referenced Invoice Number',
+				name: 'referencedNumber',
+				type: 'string',
+				default: '',
+				description:
+					'For cancellation invoices and credit notes. Defaults to the latest invoice of the order.',
+			},
+		],
+	},
+	{
+		displayName: 'Document Type Names or IDs',
+		name: 'documentTypes',
+		type: 'multiOptions',
+		typeOptions: { loadOptionsMethod: 'getDocumentTypes' },
+		default: [],
+		description:
+			'Only these types; empty returns all. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+		displayOptions: show(['getDocuments']),
+	},
+	{
+		displayName: 'Latest per Type Only',
+		name: 'latestOnly',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to return only the newest document of each type',
+		displayOptions: show(['getDocuments']),
+	},
+	{
+		displayName: 'Download File',
+		name: 'download',
+		type: 'boolean',
+		default: true,
+		description: 'Whether to return the PDF as binary data, e.g. for an email or file upload',
+		displayOptions: show(['createDocument']),
+	},
+	{
+		displayName: 'Download Files',
+		name: 'download',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to return each PDF as binary data',
+		displayOptions: show(['getDocuments']),
+	},
+	{
+		displayName: 'Put Output File in Field',
+		name: 'binaryPropertyName',
+		type: 'string',
+		default: 'data',
+		hint: 'The name of the output binary field to put the file in',
+		displayOptions: show(['createDocument', 'getDocuments'], { download: [true] }),
+	},
 
 	/* -------------------------------- update -------------------------------- */
 	{

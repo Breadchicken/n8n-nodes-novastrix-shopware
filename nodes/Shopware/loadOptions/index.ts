@@ -1,6 +1,6 @@
 import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
 
-import { shopwareApiRequest } from '../shared/transport';
+import { shopwareApiRequest, shopwareSearch } from '../shared/transport';
 
 type LoadOptionsMethod = (this: ILoadOptionsFunctions) => Promise<INodePropertyOptions[]>;
 
@@ -80,7 +80,20 @@ export function createAssociationLoader(entity: string): LoadOptionsMethod {
 	};
 }
 
+/** Document types of the shop (invoice, delivery note, ZUGFeRD, app-provided, ...). */
+async function getDocumentTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const types = await shopwareSearch.call(this, 'document_type', {
+		sort: [{ field: 'name', order: 'ASC' }],
+	});
+	return types.map((type) => ({
+		name: String((type.translated as { name?: string } | undefined)?.name ?? type.name),
+		value: String(type.technicalName),
+		description: String(type.technicalName),
+	}));
+}
+
 export const loadOptions: Record<string, LoadOptionsMethod> = {
+	getDocumentTypes,
 	getProductAssociations: createAssociationLoader('product'),
 	getProductFields: createFieldLoader('product'),
 };

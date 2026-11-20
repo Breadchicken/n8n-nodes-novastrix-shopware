@@ -20,6 +20,7 @@ import { executeProduct } from './resources/product/execute';
 import { systemOperations } from './resources/system/description';
 import { executeSystem } from './resources/system/execute';
 import { toNodeError } from './shared/errors';
+import { OutputItems } from './shared/output';
 import { createExecutionState } from './shared/state';
 
 export class Shopware implements INodeType {
@@ -105,7 +106,7 @@ export class Shopware implements INodeType {
 				const resource = this.getNodeParameter('resource', i) as string;
 				const operation = this.getNodeParameter('operation', i) as string;
 
-				let responseData: IDataObject | IDataObject[];
+				let responseData: IDataObject | IDataObject[] | OutputItems;
 
 				switch (resource) {
 					case 'backInStock':
@@ -129,6 +130,12 @@ export class Shopware implements INodeType {
 						});
 				}
 
+				if (responseData instanceof OutputItems) {
+					returnData.push(
+						...responseData.items.map((item) => ({ ...item, pairedItem: { item: i } })),
+					);
+					continue;
+				}
 				returnData.push(
 					...this.helpers.constructExecutionMetaData(this.helpers.returnJsonArray(responseData), {
 						itemData: { item: i },

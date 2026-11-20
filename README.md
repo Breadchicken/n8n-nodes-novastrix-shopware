@@ -10,7 +10,6 @@ Planned highlights:
 - **Searchable pickers** for all entities, with real pagination even in large catalogs.
 - **Full DAL criteria search**: filters, sorting, associations and aggregations.
 - **Bulk create, update and delete** through Shopware's sync API.
-- **Order documents** (invoice, delivery note) as binary data.
 - A **webhook trigger** for Shopware events.
 
 [Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Compatibility](#compatibility) · [Development](#development) · [Resources](#resources)
@@ -39,7 +38,7 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 |---|---|
 | Back in Stock (Novastrix) | Get, Get Many, Unsubscribe (by ID or all of an email), Resend Notification, Get Failed Notifications, Retry Failed Notification, Get Demand, Get Recovered Revenue |
 | Configurator (Novastrix) | Create, Delete, Get, Get Many, Update |
-| Order | Get, Get Many, Update, Change Status (order, payment, delivery), Add Tracking Code |
+| Order | Get, Get Many, Update, Change Status (order, payment, delivery), Add Tracking Code, Create Document, Get Documents |
 | Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit |
 | System | Get Version |
 
@@ -73,6 +72,8 @@ Matching ignores case. If a value matches more than one record, the node stops w
 - For the **order status**, the node goes through the required steps (Open → In Progress → Done). **Payment and delivery** statuses only change directly; if the target needs several steps (e.g. Unconfirmed → Paid → Refunded), the node stops and lists the possible next states, because each step triggers its own flows and webhooks.
 - Setting a status the order already has does nothing and returns `changed: false`, so workflows can run repeatedly.
 - **Add Tracking Code** keeps existing codes, ignores duplicates and can mark the delivery as shipped in the same step.
+- **Create Document** creates an invoice, delivery note, cancellation invoice, credit note, ZUGFeRD or app-provided document and returns the PDF as binary data (field `data`), ready for an email or upload node. By default an existing document of the same type is returned instead of creating a new one, so a re-run does not produce a second invoice number. Cancellation invoices and credit notes reference the latest invoice automatically.
+- **Get Documents** lists the documents of an order (optionally only the latest per type) and can download their PDFs.
 - Payment means the current payment (the primary one on 6.7, otherwise the latest); delivery means the main delivery.
 
 ### Product notes

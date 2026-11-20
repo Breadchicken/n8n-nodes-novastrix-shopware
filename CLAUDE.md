@@ -159,6 +159,8 @@ How the token is handled, and why:
 - Transitions come from `state_machine_transition` (filter `stateMachine.technicalName`: `order.state`, `order_transaction.state`, `order_delivery.state`), cached per run. `shortestPath()` finds the steps.
 - **Multi-step changes only for the order status.** For payment/delivery every intermediate step fires real flows/webhooks (e.g. a fake "refunded"), so only direct transitions are allowed and the error lists the reachable states.
 - Current payment/delivery: `primaryOrderTransactionId` / `primaryOrderDeliveryId` (6.7), otherwise the latest transaction / first delivery. Filters use `primaryOrder*` paths when the schema has them.
+- Documents: `POST /_action/order/document/{type}/create` with `[{ orderId, fileType: 'pdf', static: false, config: { documentNumber, documentDate, documentComment }, referencedDocumentId }]` returns `{ data: [{ documentId }], errors: { <orderId>: [...] } }` (errors come with HTTP 200!). Download: `GET /_action/document/{id}/{deepLinkCode}?download=1` via `shopwareFileRequest`. Storno/credit notes need `referencedDocumentId` (an invoice). `deepLinkCode` is not returned in the output.
+- Binary output: executors return `new OutputItems(items)` (`shared/output.ts`); the node adds `pairedItem`.
 - Test orders: no demodata in the dev shop (`shopware/dev-tools` missing). Create real guest orders through the Store API checkout (`account/register` with `guest: true` -> `checkout/cart/line-item` -> `checkout/order`).
 
 ## Shopware API gotchas

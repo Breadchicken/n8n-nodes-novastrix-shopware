@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Plugin check: before plugin fields or plugin operations are used, the node verifies that the Novastrix plugin is installed and active (once per run) and links to novastrix.com/shopware otherwise. Plugin resources show a hint with the same link.
 - Product Get/Get Many: associations are loaded dynamically from the entity schema, including associations added by plugins.
 - Order resource: Get, Get Many (filters for order, payment and delivery status, customer, email, dates, tag, sales channel), Update (comments, tags, custom fields), Change Status with automatic steps for the order status and optional status mail with documents, Add Tracking Code with optional "mark as shipped". Simplified output with statuses, customer, addresses, line items and tracking codes.
+- Order documents: Create Document (any document type of the shop, PDF as binary, reuses an existing document by default, automatic invoice reference for cancellations and credit notes) and Get Documents (filter by type, latest per type, optional download).
 - Back in Stock resource (Novastrix Back in Stock): list and get subscriptions, unsubscribe by ID or email, resend notifications, list and retry failed notifications, demand per variant, recovered revenue.
 - Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.
 
