@@ -15,3 +15,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Language option (`sw-language-id`) for translated fields.
 - Error messages list every Shopware error with the affected field.
 - Product Get/Get Many: field selection as a multi-select loaded from the shop's entity schema (includes plugin and custom fields); selected associations are kept in the output.
+- Product Get/Get Many: associations are loaded dynamically from the entity schema, including associations added by plugins.

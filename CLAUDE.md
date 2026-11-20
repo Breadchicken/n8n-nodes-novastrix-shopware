@@ -140,7 +140,7 @@ How the token is handled, and why:
 - Prices are an array per currency; the default-currency entry (`DEFAULT_CURRENCY_ID`) is mandatory. `listPrice` lives inside the price entry.
 - Error titles are generic ("Bad Request"); the useful text is in `detail`.
 - `includes` filters associations too: when limiting fields, add the selected association names to the includes list or they disappear from the output.
-- Field lists for dropdowns come from `GET /_info/entity-schema.json` (~750 KB, all entities); use `createFieldLoader(entity)` in `loadOptions/index.ts` instead of hard-coding fields.
+- Field lists for dropdowns come from `GET /_info/entity-schema.json` (~750 KB, all entities); use `createFieldLoader(entity)` / `createAssociationLoader(entity)` in `loadOptions/index.ts` instead of hard-coding fields or associations. n8n lint requires the display name to end with "Names or IDs" for these dynamic multi-selects.
 
 ## Testing
 

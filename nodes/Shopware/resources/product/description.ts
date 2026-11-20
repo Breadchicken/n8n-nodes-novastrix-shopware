@@ -481,27 +481,15 @@ export const productFields: INodeProperties[] = [
 		displayOptions: show(['get', 'getAll']),
 		options: [
 			{
-				displayName: 'Associations',
+				displayName: 'Association Names or IDs',
 				name: 'associations',
 				type: 'multiOptions',
+				typeOptions: {
+					loadOptionsMethod: 'getProductAssociations',
+				},
 				default: [],
-				description: 'Related data to load with each product',
-				options: [
-					{ name: 'Categories', value: 'categories' },
-					{ name: 'Cover Image', value: 'cover' },
-					{ name: 'Cross-Sellings', value: 'crossSellings' },
-					{ name: 'Delivery Time', value: 'deliveryTime' },
-					{ name: 'Manufacturer', value: 'manufacturer' },
-					{ name: 'Media', value: 'media' },
-					{ name: 'Prices (Advanced)', value: 'prices' },
-					{ name: 'Properties', value: 'properties' },
-					{ name: 'SEO URLs', value: 'seoUrls' },
-					{ name: 'Tags', value: 'tags' },
-					{ name: 'Tax', value: 'tax' },
-					{ name: 'Variant Options', value: 'options' },
-					{ name: 'Variants', value: 'children' },
-					{ name: 'Visibilities', value: 'visibilities' },
-				],
+				description:
+					'Related data to load with each product, e.g. manufacturer or categories. List associations (such as orderLineItems) can be large. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Field Names or IDs',

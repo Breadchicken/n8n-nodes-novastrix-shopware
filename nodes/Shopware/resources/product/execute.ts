@@ -220,8 +220,8 @@ async function readHeaders(
 function readCriteria(options: IDataObject): IDataObject {
 	const criteria: IDataObject = {};
 
-	const associations = options.associations as string[] | undefined;
-	if (associations?.length) {
+	const associations = splitList(options.associations);
+	if (associations.length > 0) {
 		criteria.associations = Object.fromEntries(associations.map((name) => [name, {}]));
 	}
 
@@ -230,7 +230,7 @@ function readCriteria(options: IDataObject): IDataObject {
 	const fields = splitList(options.fields);
 	if (fields.length > 0) {
 		criteria.includes = {
-			product: Array.from(new Set(['id', ...fields, ...(associations ?? [])])),
+			product: Array.from(new Set(['id', ...fields, ...associations])),
 		};
 	}
 
