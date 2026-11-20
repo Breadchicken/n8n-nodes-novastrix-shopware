@@ -9,6 +9,7 @@ import type {
 import { NodeApiError } from 'n8n-workflow';
 
 import { formatShopwareErrors } from './errors';
+import { EntityResolver } from './resolver';
 import { normalizeShopUrl } from './url';
 
 export const CREDENTIAL_NAME = 'shopwareAdminApi';
@@ -88,6 +89,46 @@ function toNodeApiError(context: ShopwareContext, error: unknown): NodeApiError 
 	);
 }
 
+/** DAL entity names use underscores, API routes use dashes (`product_manufacturer`). */
+export function entityPath(entity: string): string {
+	return entity.replace(/_/g, '-');
+}
+
+/** Admin URL of a record, used for "open in Shopware" links. */
+export async function adminUrl(
+	this: ShopwareContext,
+	adminPath: string | undefined,
+	id: string,
+): Promise<string | undefined> {
+	if (!adminPath) {
+		return undefined;
+	}
+	const credentials = await this.getCredentials(CREDENTIAL_NAME);
+	return `${normalizeShopUrl(credentials.url)}/admin#/${adminPath.replace('{id}', id)}`;
+}
+
+/** Single search request without paging; returns the records. */
+export async function shopwareSearchPage(
+	this: ShopwareContext,
+	entity: string,
+	criteria: IDataObject,
+	headers?: Record<string, string>,
+): Promise<IDataObject[]> {
+	const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entityPath(entity)}`, {
+		body: criteria,
+		headers,
+	})) as ShopwareSearchResponse;
+	return response.data ?? [];
+}
+
+/** Creates a name resolver bound to this execution context. */
+export function createResolver(this: ShopwareContext): EntityResolver {
+	return new EntityResolver(
+		async (entity, criteria, headers) =>
+			await shopwareSearchPage.call(this, entity, criteria, headers),
+	);
+}
+
 export interface ShopwareSearchResponse {
 	total?: number;
 	data: IDataObject[];
@@ -110,7 +151,7 @@ export async function shopwareSearch(
 	let page = 1;
 
 	while (true) {
-		const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entity}`, {
+		const response = (await shopwareApiRequest.call(this, 'POST', `/search/${entityPath(entity)}`, {
 			body: { ...criteria, page, limit: pageSize, 'total-count-mode': 'none' },
 			headers,
 		})) as ShopwareSearchResponse;

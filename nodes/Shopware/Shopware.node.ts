@@ -7,8 +7,13 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+import { listSearch } from './listSearch';
+import { productFields, productOperations } from './resources/product/description';
+import { executeProduct } from './resources/product/execute';
+import { systemOperations } from './resources/system/description';
+import { executeSystem } from './resources/system/execute';
 import { toNodeError } from './shared/errors';
-import { shopwareApiRequest } from './shared/transport';
+import { createExecutionState } from './shared/state';
 
 export class Shopware implements INodeType {
 	description: INodeTypeDescription = {
@@ -42,38 +47,30 @@ export class Shopware implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Product',
+						value: 'product',
+					},
+					{
 						name: 'System',
 						value: 'system',
 					},
 				],
-				default: 'system',
+				default: 'product',
 			},
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['system'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Version',
-						value: 'getVersion',
-						description: 'Get the Shopware version of the shop',
-						action: 'Get the shopware version',
-					},
-				],
-				default: 'getVersion',
-			},
+			...productOperations,
+			...productFields,
+			...systemOperations,
 		],
+	};
+
+	methods = {
+		listSearch,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
+		const state = createExecutionState(this);
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -82,25 +79,24 @@ export class Shopware implements INodeType {
 
 				let responseData: IDataObject | IDataObject[];
 
-				if (resource === 'system' && operation === 'getVersion') {
-					responseData = (await shopwareApiRequest.call(
-						this,
-						'GET',
-						'/_info/version',
-					)) as IDataObject;
-				} else {
-					throw new NodeOperationError(
-						this.getNode(),
-						`The operation "${operation}" is not supported for resource "${resource}"`,
-						{ itemIndex: i },
-					);
+				switch (resource) {
+					case 'product':
+						responseData = await executeProduct.call(this, state, operation, i);
+						break;
+					case 'system':
+						responseData = await executeSystem.call(this, operation, i);
+						break;
+					default:
+						throw new NodeOperationError(this.getNode(), `Unknown resource "${resource}"`, {
+							itemIndex: i,
+						});
 				}
 
-				const executionData = this.helpers.constructExecutionMetaData(
-					this.helpers.returnJsonArray(responseData),
-					{ itemData: { item: i } },
+				returnData.push(
+					...this.helpers.constructExecutionMetaData(this.helpers.returnJsonArray(responseData), {
+						itemData: { item: i },
+					}),
 				);
-				returnData.push(...executionData);
 			} catch (error) {
 				if (this.continueOnFail()) {
 					returnData.push({

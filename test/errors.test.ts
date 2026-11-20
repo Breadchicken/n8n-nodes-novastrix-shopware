@@ -21,7 +21,7 @@ describe('formatShopwareErrors', () => {
 			],
 		});
 
-		expect(result?.message).toBe('Constraint violation error (+1 more)');
+		expect(result?.message).toBe('This value should not be blank. (+1 more)');
 		expect(result?.description).toBe(
 			'name: This value should not be blank. [c1d1b5c3]\ntaxId: This value should not be blank. [c1d1b5c3]',
 		);
@@ -31,7 +31,7 @@ describe('formatShopwareErrors', () => {
 		const result = formatShopwareErrors(
 			JSON.stringify({ errors: [{ title: 'Unauthorized', detail: 'Access token is invalid' }] }),
 		);
-		expect(result?.message).toBe('Unauthorized');
+		expect(result?.message).toBe('Access token is invalid');
 		expect(result?.description).toBe('Access token is invalid');
 	});
 

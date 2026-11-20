@@ -35,7 +35,8 @@ export function formatShopwareErrors(
 	});
 
 	const first = errors[0];
-	const message = first.title || first.detail || 'Shopware API error';
+	// Shopware titles are often generic ("Bad Request"), the detail carries the actual cause.
+	const message = first.detail || first.title || 'Shopware API error';
 	const suffix = errors.length > 1 ? ` (+${errors.length - 1} more)` : '';
 
 	return {

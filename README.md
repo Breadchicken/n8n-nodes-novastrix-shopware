@@ -2,7 +2,7 @@
 
 An [n8n](https://n8n.io/) community node for the [Shopware 6](https://www.shopware.com/) Admin API.
 
-> **Status: early development.** The credential and the connection check are done. Resources and operations are being added; see the [changelog](CHANGELOG.md).
+> **Status: early development.** Products are fully supported; more resources are being added. See the [changelog](CHANGELOG.md).
 
 Planned highlights:
 
@@ -37,9 +37,40 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 
 | Resource | Operations |
 |---|---|
+| Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update |
 | System | Get Version |
 
 More resources are in progress.
+
+### Names instead of IDs
+
+Every field that references another Shopware record offers three modes:
+
+- **From List**: a searchable dropdown that pages through all records.
+- **By Name** (or number, ISO code, ...): the value is resolved when the workflow runs. Great for expressions like `{{ $json.manufacturer }}`.
+- **By ID**: the raw Shopware ID.
+
+| Record | Accepted values |
+|---|---|
+| Product | product number, name |
+| Tax rate | rate (`19`, `19%`), name |
+| Category | name or path (`Home > Shoes`, also partial: `Men > Shoes`) |
+| Property option | `Group: Option` (`Color: Red`), name |
+| Currency / Country | ISO code, name |
+| Language | locale (`de-DE`), name |
+| Payment / Shipping method | technical name, name |
+| Customer | customer number, email |
+| Sales channel, manufacturer, delivery time, tag, ... | name |
+
+Matching ignores case. If a value matches more than one record, the node stops with an error listing the candidates instead of guessing. Lookups are cached per run, so a loop over 1,000 items with the same manufacturer performs one lookup.
+
+### Product notes
+
+- **Prices** are entered gross in the shop's default currency; the net price is calculated from the tax rate (or set explicitly). Changing only the tax rate recalculates the net prices.
+- **Categories, properties, sales channels and tags** are added; existing assignments are kept.
+- **Tags** that do not exist fail by default; enable *Create Missing Tags* to create them.
+- **Raw Fields (JSON)** lets you set any product field the UI does not cover.
+- **Language** (option) reads and writes translated fields such as name and description in that language.
 
 ## Compatibility
 

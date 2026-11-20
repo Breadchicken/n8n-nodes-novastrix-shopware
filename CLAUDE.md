@@ -49,13 +49,17 @@ icons/shopware.svg, shopware.dark.svg         # themed icons (node + credential)
 nodes/Shopware/
   Shopware.node.ts                            # description + execute router
   Shopware.node.json                          # codex (category: Sales)
-  resources/<resource>/index.ts               # operation + field descriptions
-  resources/<resource>/<operation>.ts         # execute logic per operation
-  listSearch/<entity>.ts                      # resource locator search methods
-  shared/transport.ts                         # shopwareApiRequest, shopwareSearch
-  shared/resolver.ts                          # name -> ID resolution (planned)
-  shared/criteria.ts                          # criteria builder (planned)
+  resources/<resource>/description.ts         # operation + field descriptions
+  resources/<resource>/execute.ts             # execute logic per operation
+  listSearch/index.ts                         # generated searchable dropdowns (one per entity)
+  shared/entities.ts                          # entity registry: natural keys, display, admin links
+  shared/resolver.ts                          # EntityResolver: name -> ID, cached per run
+  shared/locators.ts                          # entityLocator / entityLocatorList builders
+  shared/state.ts                             # per-execution state (resolver, tax rate cache)
+  shared/options.ts                           # shared options (language)
+  shared/transport.ts                         # shopwareApiRequest, shopwareSearch(Page)
   shared/errors.ts                            # Shopware error formatting, toNodeError
+  shared/utils.ts                             # ids, JSON params, price helpers
   shared/url.ts                               # shop URL normalization
 test/                                         # vitest, mirrors the source tree
 ```
@@ -102,10 +106,12 @@ Natural keys per entity (extend this table when adding resources):
 | salutation | `salutationKey` |
 | state_machine_state | `technicalName` |
 
+To support a new entity: add it to `ENTITIES` in `shared/entities.ts` (lookups, display, search fields, admin path). The dropdown (`listSearch`) and the resolver pick it up automatically; in descriptions use `entityLocator()` / `entityLocatorList()`, in execute use `state.resolver.resolveLocator()`.
+
 Resolution rules (implemented once in `shared/resolver.ts`, never per operation):
 
 1. If the value is already a valid ID → use it unchanged.
-2. Exact match on the natural key, then case-insensitive match (`translated.name` where applicable).
+2. Natural-key lookups in the configured order with DAL `equals`. On MySQL/MariaDB `equals` is already case-insensitive (`utf8mb4_unicode_ci`), so no extra case-insensitive pass is needed. Translated fields are matched in the context language.
 3. **Exactly one hit** → its ID. **Zero hits** → `NodeOperationError` "No <entity> found for '<value>'". **Several hits** → `NodeOperationError` listing the candidate IDs and names; never pick one silently.
 4. Cache results per execution (a `Map` keyed by `entity:key:value`) so loops over many items do one lookup per distinct value.
 5. Never auto-create missing entities unless an explicit "Create if missing" option is set.
@@ -126,9 +132,18 @@ How the token is handled, and why:
 - The shop URL is normalized (`shared/url.ts`): a trailing slash, `/api` or `/admin` is stripped, and `https://` is added if missing.
 - Requests send `Accept: application/json`. Without it some endpoints answer in JSON:API format.
 
+## Shopware API gotchas
+
+- Variants return `null` for inherited fields unless the request sends `sw-inheritance: 1`.
+- Writing `categories`/`properties`/`tags` as `[{id}]` adds associations; it never removes existing ones. Removing needs a `DELETE` on the mapping route.
+- `visibilities` are unique per product and sales channel: check existing ones before adding (see product `existingVisibilities`).
+- Prices are an array per currency; the default-currency entry (`DEFAULT_CURRENCY_ID`) is mandatory. `listPrice` lives inside the price entry.
+- Error titles are generic ("Bad Request"); the useful text is in `detail`.
+
 ## Testing
 
 - **Unit tests:** vitest under `test/`. Cover pure functions (URL, errors, criteria, resolver) and `preAuthentication` with a mocked `helpers.httpRequest`. For operations, mock `IExecuteFunctions` and stub `helpers.httpRequestWithAuthentication`. Use `nock` for transport-level tests.
+- **Integration against a real shop:** run the compiled node with a minimal `IExecuteFunctions` stub that forwards `httpRequestWithAuthentication` to `fetch`. Cover create → get → update → upsert → getAll → delete and count token requests (must be 1).
 - **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
 - **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
 
