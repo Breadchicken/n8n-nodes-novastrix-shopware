@@ -1,0 +1,75 @@
+# Local development: n8n with this package hot-reloaded, plus a Node toolchain container.
+#
+#   docker compose up -d                  # build, start n8n, import credential + example workflows
+#   docker compose logs -f                # tsc and n8n output
+#   docker compose run --rm dev npm test  # any npm command (lint, build, test, ...)
+#   docker compose down                   # stop (add -v to drop the n8n data)
+#
+# Settings come from .env (see .env.example). Dev tooling only: not part of the published package.
+name: n8n-nodes-novastrix-shopware
+
+x-package-dir: &package-dir /home/node/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware
+
+services:
+  dev:
+    build:
+      context: docker
+      dockerfile: dev.Dockerfile
+      args:
+        # Set UID/GID in .env to your `id -u` / `id -g`, or files in the repo get the wrong owner.
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: n8n-nodes-novastrix-shopware-dev
+    command: ['node', 'docker/dev-watch.mjs']
+    init: true
+    environment:
+      HOME: /tmp/home
+    volumes:
+      - .:/workspace/n8n-nodes-novastrix-shopware
+    healthcheck:
+      test: ['CMD', 'test', '-f', 'dist/.ready']
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 10m
+      start_interval: 2s
+
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION:-stable}
+    depends_on:
+      dev:
+        condition: service_healthy
+    # Runs n8n and imports the credential and example workflows (see docker/n8n-start.sh).
+    init: true
+    entrypoint: ['/bin/sh', '/home/node/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware/docker/n8n-start.sh']
+    ports:
+      # Never 0.0.0.0: n8n runs with a fixed dev login.
+      - '${N8N_BIND_ADDRESS:-127.0.0.1}:${N8N_PORT:-5678}:5678'
+    environment:
+      PACKAGE_DIR: *package-dir
+      N8N_DEV_RELOAD: 'true'
+      N8N_SECURE_COOKIE: 'false'
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      N8N_PERSONALIZATION_ENABLED: 'false'
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Europe/Berlin}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      N8N_INSTANCE_OWNER_MANAGED_BY_ENV: 'true'
+      N8N_INSTANCE_OWNER_EMAIL: admin@example.com
+      # bcrypt of Quickstart123! ($$ escapes $ in compose files)
+      N8N_INSTANCE_OWNER_PASSWORD_HASH: $$2a$$10$$O4oRMg5U1FhXyMoSn1rvXO0y7IbLnGhomnSM23dYL/LJqGh3h4dP.
+      N8N_INSTANCE_OWNER_FIRST_NAME: Quickstart
+      N8N_INSTANCE_OWNER_LAST_NAME: Admin
+    extra_hosts:
+      # Lets the credential reach a shop on the host (localhost URLs are rewritten to this).
+      - host.docker.internal:host-gateway
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # n8n loads the package like `n8n-node dev` does: node type CUSTOM.shopware.
+      - type: bind
+        source: .
+        target: *package-dir
+        read_only: true
+
+volumes:
+  n8n_data:

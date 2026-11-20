@@ -30,15 +30,27 @@ Goal: be the most complete Shopware node for n8n. Existing packages (`@solution2
 
 ## Commands
 
+n8n 3 is no longer published to npm, so n8n runs only from the `n8nio/n8n` image and all tooling runs in Docker (`compose.yaml`, `docker/`). The host needs no Node.js.
+
 ```bash
-npm run dev        # n8n on http://localhost:5678 with this package hot-reloaded
-npm run quickstart # same, plus login admin@example.com / Quickstart123!, credential from .env, example workflows
-npm run build      # tsc + assets -> dist/
-npm run lint       # n8n community lint rules (same as verification)
-npm run lint:fix
-npm test           # vitest
-npm run release    # release-it: lint, build, bump, changelog, tag, push -> CI publishes
+docker compose up -d                       # dev: npm ci + build + tsc --watch; n8n (http://localhost:5678, admin@example.com / Quickstart123!)
+docker compose run --rm dev npm run build  # tsc + assets -> dist/
+docker compose run --rm dev npm run lint   # n8n community lint rules (same as verification)
+docker compose run --rm dev npm run lint:fix
+docker compose run --rm dev npm test       # vitest
+docker compose exec n8n n8n <command>      # n8n CLI inside the running instance
+docker compose down [-v]                   # -v drops the n8n data volume
+npm run release    # release-it: lint, build, bump, changelog, tag, push -> CI publishes (needs git credentials, run where you push from)
 ```
+
+Docker setup facts:
+
+- `.env` (gitignored) feeds compose and the quickstart: `UID`/`GID` (owner of files the dev container writes), `SHOPWARE_*`, `N8N_VERSION` (image tag, default `stable`; `v3-nightly` for n8n 3), `N8N_BIND_ADDRESS` (on the dev server: the NetBird address `100.100.204.236`, never `0.0.0.0`), `N8N_PORT`, `N8N_WEBHOOK_URL`.
+- The repo is mounted read-only into the n8n container at `/home/node/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware` (`$PACKAGE_DIR`), so the node type is `CUSTOM.shopware`.
+- The n8n image has no file watcher (`@parcel/watcher` missing). `docker/dev-watch.mjs` calls `POST /rest/dev/reload` (needs `N8N_DEV_RELOAD=true`, no auth) after each successful `tsc` pass.
+- `docker/n8n-start.sh` starts n8n first and then runs `scripts/quickstart.mjs --boot`: n8n 3 creates its encryption key in the database on the first start, so `import:credentials` before that fails with "No active encryption key found". Workflows are imported only on the first start (marker `~/.n8n/.quickstart`), the credential on every start.
+- The dev container mounts the repo at `/workspace/n8n-nodes-novastrix-shopware`, not `/app`: the n8n lint plugin's `findPackageJson` never checks a directory directly under `/`, and `no-credential-reuse`/`no-restricted-imports` then fail.
+- `isolated-vm` (via `n8n-workflow`) compiles with node-gyp and needs Node 24, hence `node:24-bookworm` for the dev image.
 
 Publishing happens **only** from GitHub Actions (`.github/workflows/publish.yml`, triggered by a `x.y.z` tag) with npm provenance. Since 2026-05-01 n8n requires this. Never run `npm publish` locally.
 
@@ -192,12 +204,12 @@ How the token is handled, and why:
 - **Unit tests:** vitest under `test/`. Cover pure functions (URL, errors, criteria, resolver) and `preAuthentication` with a mocked `helpers.httpRequest`. For operations, mock `IExecuteFunctions` and stub `helpers.httpRequestWithAuthentication`. Use `nock` for transport-level tests.
 - **Integration against a real shop:** run the compiled node with a minimal `IExecuteFunctions` stub that forwards `httpRequestWithAuthentication` to `fetch`. Cover create → get → update → upsert → getAll → delete and count token requests (must be 1).
 - **Real n8n, headless (do this for every new operation before calling it done):** the stub harness does not cover n8n's own request, binary and credential handling.
-  - Isolated home: `N8N_USER_FOLDER=<scratch>/n8nhome`, symlink the repo to `<home>/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware`. In this mode the node type is **`CUSTOM.shopware`** (installed from npm it is `n8n-nodes-novastrix-shopware.shopware`).
-  - `npx n8n import:credentials --input=creds.json` (plain `data` object is encrypted on import; set `accessToken` to garbage to exercise the 401 refresh), `npx n8n import:workflow --input=wf.json`, `npx n8n execute --id=<id> --rawOutput`.
+  - Use the compose stack: the node type is **`CUSTOM.shopware`** (installed from npm it is `n8n-nodes-novastrix-shopware.shopware`). Files for the CLI go into the container with `docker compose cp file.json n8n:/tmp/`.
+  - `docker compose exec n8n n8n import:credentials --input=/tmp/creds.json` (plain `data` object is encrypted on import; set `accessToken` to garbage to exercise the 401 refresh), `... import:workflow --input=/tmp/wf.json`, `docker compose exec -e N8N_RUNNERS_BROKER_PORT=5680 n8n n8n execute --id=<id> --rawOutput` (the running instance already holds the broker port 5679).
   - Verify binaries with a Code node (`this.helpers.getBinaryDataBuffer`). A node with zero output items stops the workflow, so test such operations in their own workflow.
-  - Dropdowns and resource locators: `npx n8n start` on a spare port, `POST /rest/owner/setup` + `/rest/login`, then `POST /rest/dynamic-node-parameters/options` (loadOptions) and `/rest/dynamic-node-parameters/resource-locator-results` (listSearch) with `nodeTypeAndVersion: { name: 'CUSTOM.shopware', version: 1 }`.
-- **Quickstart / example workflows** (`scripts/quickstart.mjs`, `examples/workflows/*.json`): when adding an operation, add or extend an example workflow. Workflows store the npm type `n8n-nodes-novastrix-shopware.shopware`; the script rewrites it to `CUSTOM.shopware` on import. The owner comes from `N8N_INSTANCE_OWNER_MANAGED_BY_ENV` + a bcrypt hash (n8n accepts only pre-hashed passwords there). The example workflows also serve as a smoke test: `npm run quickstart -- --no-start`, then `n8n execute --id=nvsQuickstart00N` with `N8N_USER_FOLDER=~/.n8n-novastrix-shopware` (`N8N_RUNNERS_BROKER_PORT` must differ if another n8n is running; with `N8N_LOG_LEVEL=warn`, `execute` prints nothing).
-- **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The Novastrix plugins must be installed there for plugin tests (`bin/console plugin:install -n --activate <Name>` inside the container). The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
+  - Dropdowns and resource locators: against the running instance, `POST /rest/login` (`emailOrLdapLoginId`, `password`), then `POST /rest/dynamic-node-parameters/options` (loadOptions) and `/rest/dynamic-node-parameters/resource-locator-results` (listSearch) with `nodeTypeAndVersion: { name: 'CUSTOM.shopware', version: 1 }`.
+- **Quickstart / example workflows** (`scripts/quickstart.mjs`, `examples/workflows/*.json`): when adding an operation, add or extend an example workflow. Workflows store the npm type `n8n-nodes-novastrix-shopware.shopware`; the script rewrites it to `CUSTOM.shopware` on import. The owner comes from `N8N_INSTANCE_OWNER_MANAGED_BY_ENV` + a bcrypt hash in `compose.yaml` (n8n accepts only pre-hashed passwords there). The example workflows also serve as a smoke test: `docker compose exec -e N8N_RUNNERS_BROKER_PORT=5680 n8n n8n execute --id=nvsQuickstart00N --rawOutput`. Re-import after editing them: `docker compose exec n8n sh -c 'node "$PACKAGE_DIR/scripts/quickstart.mjs"'`.
+- **Manual end-to-end:** `docker compose up -d` against a local Shopware 6.7 shop (`SHOPWARE_URL=http://localhost:8080` is rewritten to `host.docker.internal`). The Novastrix plugins must be installed there for plugin tests (`bin/console plugin:install -n --activate <Name>` inside the container). The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
 - **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
 
 ## Compatibility

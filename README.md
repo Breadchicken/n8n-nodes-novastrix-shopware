@@ -133,6 +133,7 @@ Shopware must be able to reach n8n:
           enable_url_validation: false
   ```
   Then run `bin/console cache:clear`.
+- **Docker quickstart:** n8n is published on `127.0.0.1` only, which a shop container cannot reach through `host.docker.internal`. Connect n8n to the shop's Docker network instead (`docker network connect <shop network> n8n-nodes-novastrix-shopware-n8n-1`) and use `http://n8n-nodes-novastrix-shopware-n8n-1:5678` as the Webhook Base URL.
 - Shopware sends webhooks through its message queue. If the shop has no worker running (`messenger:consume`) and the admin worker is disabled, events arrive late or not at all.
 - Shopware deactivates a webhook after repeated delivery errors, e.g. while n8n is down. Deactivating and activating the workflow creates it again.
 
@@ -143,25 +144,24 @@ Shopware must be able to reach n8n:
 
 ## Quickstart
 
-Try every area of the node in a local n8n within a few minutes. You need Node.js 22+ and a Shopware 6.6/6.7 shop with an integration (see [Credentials](#credentials)).
+Try every area of the node in a local n8n within a few minutes. You need Docker with Compose and a Shopware 6.6/6.7 shop with an integration (see [Credentials](#credentials)). n8n runs from the official `n8nio/n8n` image (n8n 3 is no longer published to npm), Node.js on the host is not needed.
 
 ```bash
 git clone https://github.com/Breadchicken/n8n-nodes-novastrix-shopware.git
 cd n8n-nodes-novastrix-shopware
-npm install
-cp .env.example .env    # enter SHOPWARE_URL, SHOPWARE_CLIENT_ID, SHOPWARE_CLIENT_SECRET
-npm run quickstart
+cp .env.example .env    # set UID/GID (`id -u`, `id -g`), SHOPWARE_URL, SHOPWARE_CLIENT_ID, SHOPWARE_CLIENT_SECRET
+docker compose up -d
 ```
 
-Open http://localhost:5678 and log in with:
+The first start installs the dependencies and builds the package, which takes a few minutes. Follow it with `docker compose logs -f`. Then open http://localhost:5678 and log in with:
 
 | Email | Password |
 |---|---|
 | `admin@example.com` | `Quickstart123!` |
 
-This login is for local testing only. Do not expose this n8n instance.
+This login is for local testing only. n8n is published on `127.0.0.1` by default; do not expose it.
 
-The quickstart creates a separate n8n home in `~/.n8n-novastrix-shopware` with the `Shopware (Quickstart)` credential and these workflows:
+On the first start the n8n container gets the `Shopware (Quickstart)` credential and these workflows:
 
 | Workflow | What it shows | Writes data |
 |---|---|---|
@@ -178,22 +178,26 @@ Open a workflow and click **Execute workflow**. Workflows marked "writes data" c
 
 Options:
 
-- `npm run quickstart` again: re-imports the example workflows and starts n8n. The data is kept.
-- `npm run quickstart -- --reset`: starts over with an empty n8n home.
-- `npm run quickstart -- --no-start`: only sets things up.
-- Without a `.env`, a placeholder credential is created. Enter the shop URL and keys under **Credentials** in n8n.
-- `N8N_PORT` changes the port. Stop `npm run dev` first, or pick another port.
+- The credential is updated from `.env` on every start: `docker compose restart n8n`. A shop on `localhost` is reached through `host.docker.internal`.
+- Re-import the example workflows: `docker compose exec n8n sh -c 'node "$PACKAGE_DIR/scripts/quickstart.mjs"'`.
+- Start over with empty n8n data: `docker compose down -v`, then `docker compose up -d`.
+- Without shop settings in `.env`, a placeholder credential is created. Enter the shop URL and keys under **Credentials** in n8n.
+- `N8N_VERSION` selects the n8n image tag (default `stable`, e.g. `v3-nightly`), `N8N_PORT` and `N8N_BIND_ADDRESS` where n8n is published.
 
 The workflows are in [`examples/workflows`](examples/workflows). You can also import them into any n8n with the package installed: **Workflows > Import from File**.
 
 ## Development
 
+Everything runs in Docker (`compose.yaml`): the `dev` service compiles the package and watches for changes, the `n8n` service loads it from the working copy (node type `CUSTOM.shopware`) and reloads it after every successful compile.
+
 ```bash
-npm install
-npm run dev     # starts n8n on http://localhost:5678 with this node loaded
-npm test
-npm run lint
-npm run build
+docker compose up -d                   # n8n on http://localhost:5678, hot reload
+docker compose logs -f dev             # TypeScript errors
+docker compose run --rm dev npm test
+docker compose run --rm dev npm run lint
+docker compose run --rm dev npm run build
+docker compose exec n8n n8n --help     # n8n CLI (import, export, execute, ...)
+docker compose down                    # stop; -v also deletes the n8n data
 ```
 
 Releases are published to npm from GitHub Actions with provenance whenever a version tag is pushed (`npm run release`).
