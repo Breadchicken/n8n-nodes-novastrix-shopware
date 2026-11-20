@@ -12,7 +12,7 @@ Planned highlights:
 - **Bulk create, update and delete** through Shopware's sync API.
 - A **webhook trigger** for Shopware events.
 
-[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Compatibility](#compatibility) · [Development](#development) · [Resources](#resources)
+[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Compatibility](#compatibility) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
 
 ## Installation
 
@@ -104,6 +104,50 @@ Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create 
 
 - Shopware 6.6 and 6.7 (tested against 6.7.16)
 - n8n with community node support (`n8nNodesApiVersion` 1)
+
+## Quickstart
+
+Try every area of the node in a local n8n within a few minutes. You need Node.js 22+ and a Shopware 6.6/6.7 shop with an integration (see [Credentials](#credentials)).
+
+```bash
+git clone https://github.com/Breadchicken/n8n-nodes-novastrix-shopware.git
+cd n8n-nodes-novastrix-shopware
+npm install
+cp .env.example .env    # enter SHOPWARE_URL, SHOPWARE_CLIENT_ID, SHOPWARE_CLIENT_SECRET
+npm run quickstart
+```
+
+Open http://localhost:5678 and log in with:
+
+| Email | Password |
+|---|---|
+| `admin@example.com` | `Quickstart123!` |
+
+This login is for local testing only. Do not expose this n8n instance.
+
+The quickstart creates a separate n8n home in `~/.n8n-novastrix-shopware` with the `Shopware (Quickstart)` credential and these workflows:
+
+| Workflow | What it shows | Writes data |
+|---|---|---|
+| Shopware 1 · Connection check | Shopware version, credential test | no |
+| Shopware 2 · Products read | Get Many with filters and sorting, Get with associations | no |
+| Shopware 3 · Products write | Create or Update, Update, Get, Delete of product `N8N-QUICKSTART-001` | yes, removes it again |
+| Shopware 4 · Orders read | newest orders (simplified), their documents as PDF | no |
+| Shopware 5 · Order processing | invoice PDF for the newest order. Tracking code and payment status are included but disabled | yes |
+| Shopware 6 · Back in Stock | subscriptions, demand, recovered revenue, failed mails (Novastrix plugin) | no |
+| Shopware 7 · Configurator and audit | configurators and product quality audit (Novastrix plugins) | no |
+
+Open a workflow and click **Execute workflow**. Workflows marked "writes data" change your shop, so use a test shop for them.
+
+Options:
+
+- `npm run quickstart` again: re-imports the example workflows and starts n8n. The data is kept.
+- `npm run quickstart -- --reset`: starts over with an empty n8n home.
+- `npm run quickstart -- --no-start`: only sets things up.
+- Without a `.env`, a placeholder credential is created. Enter the shop URL and keys under **Credentials** in n8n.
+- `N8N_PORT` changes the port. Stop `npm run dev` first, or pick another port.
+
+The workflows are in [`examples/workflows`](examples/workflows). You can also import them into any n8n with the package installed: **Workflows > Import from File**.
 
 ## Development
 

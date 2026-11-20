@@ -1,0 +1,175 @@
+{
+	"id": "nvsQuickstart003",
+	"name": "Shopware 3 · Products write",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -300],
+			"parameters": {
+				"content": "## Create, update and delete a product\nWorks on product number **N8N-QUICKSTART-001** only:\n1. **Create or Update** with tax rate found by rate (\"19\")\n2. **Update** the stock\n3. **Get** it back\n4. **Delete** it again\n\nWrites data. Change the tax rate if your shop has no 19 % rate.",
+				"width": 640,
+				"height": 240
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Create or Update Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "upsert",
+				"productNumber": "N8N-QUICKSTART-001",
+				"name": "n8n Quickstart Product",
+				"tax": {
+					"__rl": true,
+					"mode": "name",
+					"value": "19"
+				},
+				"grossPrice": 19.99,
+				"stock": 10,
+				"additionalFields": {
+					"active": false
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Update Stock",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "update",
+				"product": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"updateFields": {
+					"stock": 25
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n2",
+			"name": "Get Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [780, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "get",
+				"product": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n3",
+			"name": "Delete Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [1040, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "delete",
+				"product": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Create or Update Product",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create or Update Product": {
+			"main": [
+				[
+					{
+						"node": "Update Stock",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Update Stock": {
+			"main": [
+				[
+					{
+						"node": "Get Product",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Product": {
+			"main": [
+				[
+					{
+						"node": "Delete Product",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}

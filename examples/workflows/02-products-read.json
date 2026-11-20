@@ -1,0 +1,113 @@
+{
+	"id": "nvsQuickstart002",
+	"name": "Shopware 2 · Products read",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -300],
+			"parameters": {
+				"content": "## Read products\n1. **Get Many**: 10 active main products, newest changes first\n2. **Get**: the first one again, by ID, with manufacturer and categories\n\nRead-only.",
+				"width": 640,
+				"height": 240
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Get Products",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "getAll",
+				"limit": 10,
+				"filters": {
+					"active": true,
+					"onlyMainProducts": true
+				},
+				"options": {
+					"sort": {
+						"items": [
+							{
+								"field": "updatedAt",
+								"order": "DESC"
+							}
+						]
+					}
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Get First Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 0],
+			"parameters": {
+				"resource": "product",
+				"operation": "get",
+				"product": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"options": {
+					"associations": ["manufacturer", "categories"]
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Get Products",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Products": {
+			"main": [
+				[
+					{
+						"node": "Get First Product",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}

@@ -1,0 +1,129 @@
+{
+	"id": "nvsQuickstart007",
+	"name": "Shopware 7 · Configurator and audit",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -300],
+			"parameters": {
+				"content": "## Novastrix Configurator and Product Dashboard\nNeeds the plugins, see https://novastrix.com/shopware\n- **Get Configurators**: all product configurators\n- **Get Product Audit**: quality audit of the newest product (needs one finished audit run in the dashboard)\n\nRead-only.",
+				"width": 640,
+				"height": 240
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Get Configurators",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "configurator",
+				"operation": "getAll",
+				"returnAll": true
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Get Newest Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 180],
+			"parameters": {
+				"resource": "product",
+				"operation": "getAll",
+				"limit": 1,
+				"filters": {},
+				"options": {
+					"sort": {
+						"items": [
+							{
+								"field": "createdAt",
+								"order": "DESC"
+							}
+						]
+					}
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n2",
+			"name": "Get Product Audit",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 180],
+			"parameters": {
+				"resource": "product",
+				"operation": "getAudit",
+				"product": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Get Configurators",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "Get Newest Product",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Newest Product": {
+			"main": [
+				[
+					{
+						"node": "Get Product Audit",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}

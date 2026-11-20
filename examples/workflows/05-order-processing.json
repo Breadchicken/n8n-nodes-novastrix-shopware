@@ -1,0 +1,166 @@
+{
+	"id": "nvsQuickstart005",
+	"name": "Shopware 5 · Order processing",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -300],
+			"parameters": {
+				"content": "## Process the newest order\n- **Create Invoice**: reuses an existing invoice, otherwise creates one. The PDF is in the binary tab.\n- **Add Tracking Code** and **Change Payment Status** are *disabled*: enable them (select + `D`) to try them.\n\nWrites data. Use a test shop.",
+				"width": 640,
+				"height": 240
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Get Newest Order",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "order",
+				"operation": "getAll",
+				"limit": 1,
+				"filters": {},
+				"sort": "DESC",
+				"simplify": true
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Create Invoice",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, -180],
+			"parameters": {
+				"resource": "order",
+				"operation": "createDocument",
+				"order": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"documentType": "invoice",
+				"ifExists": "useExisting",
+				"documentFields": {},
+				"download": true,
+				"binaryPropertyName": "data"
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n2",
+			"name": "Add Tracking Code",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 0],
+			"parameters": {
+				"resource": "order",
+				"operation": "addTracking",
+				"order": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"trackingCodes": "N8N-TRACK-1",
+				"markShipped": false
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"disabled": true
+		},
+		{
+			"id": "n3",
+			"name": "Change Payment Status",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 180],
+			"parameters": {
+				"resource": "order",
+				"operation": "setStatus",
+				"order": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"statusType": "payment",
+				"paymentStatus": "paid",
+				"statusOptions": {
+					"sendMail": false
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"disabled": true
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Get Newest Order",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Newest Order": {
+			"main": [
+				[
+					{
+						"node": "Create Invoice",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "Add Tracking Code",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "Change Payment Status",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}

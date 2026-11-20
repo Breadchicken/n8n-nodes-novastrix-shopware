@@ -1,0 +1,103 @@
+{
+	"id": "nvsQuickstart004",
+	"name": "Shopware 4 · Orders read",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -300],
+			"parameters": {
+				"content": "## Read orders\n1. **Get Many**: the 10 newest orders, simplified (status, payment, delivery, customer, line items)\n2. **Get Documents**: invoices, delivery notes etc. of the newest order, PDFs as binary\n\nRead-only.",
+				"width": 640,
+				"height": 240
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Get Orders",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "order",
+				"operation": "getAll",
+				"limit": 10,
+				"filters": {},
+				"sort": "DESC",
+				"simplify": true
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Get Documents",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 0],
+			"parameters": {
+				"resource": "order",
+				"operation": "getDocuments",
+				"order": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $json.id }}"
+				},
+				"documentTypes": [],
+				"latestOnly": true,
+				"download": true,
+				"binaryPropertyName": "data"
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Get Orders",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Orders": {
+			"main": [
+				[
+					{
+						"node": "Get Documents",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}

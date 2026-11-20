@@ -32,6 +32,7 @@ Goal: be the most complete Shopware node for n8n. Existing packages (`@solution2
 
 ```bash
 npm run dev        # n8n on http://localhost:5678 with this package hot-reloaded
+npm run quickstart # same, plus login admin@example.com / Quickstart123!, credential from .env, example workflows
 npm run build      # tsc + assets -> dist/
 npm run lint       # n8n community lint rules (same as verification)
 npm run lint:fix
@@ -182,6 +183,7 @@ How the token is handled, and why:
   - `npx n8n import:credentials --input=creds.json` (plain `data` object is encrypted on import; set `accessToken` to garbage to exercise the 401 refresh), `npx n8n import:workflow --input=wf.json`, `npx n8n execute --id=<id> --rawOutput`.
   - Verify binaries with a Code node (`this.helpers.getBinaryDataBuffer`). A node with zero output items stops the workflow, so test such operations in their own workflow.
   - Dropdowns and resource locators: `npx n8n start` on a spare port, `POST /rest/owner/setup` + `/rest/login`, then `POST /rest/dynamic-node-parameters/options` (loadOptions) and `/rest/dynamic-node-parameters/resource-locator-results` (listSearch) with `nodeTypeAndVersion: { name: 'CUSTOM.shopware', version: 1 }`.
+- **Quickstart / example workflows** (`scripts/quickstart.mjs`, `examples/workflows/*.json`): when adding an operation, add or extend an example workflow. Workflows store the npm type `n8n-nodes-novastrix-shopware.shopware`; the script rewrites it to `CUSTOM.shopware` on import. The owner comes from `N8N_INSTANCE_OWNER_MANAGED_BY_ENV` + a bcrypt hash (n8n accepts only pre-hashed passwords there). The example workflows also serve as a smoke test: `npm run quickstart -- --no-start`, then `n8n execute --id=nvsQuickstart00N` with `N8N_USER_FOLDER=~/.n8n-novastrix-shopware` (`N8N_RUNNERS_BROKER_PORT` must differ if another n8n is running; with `N8N_LOG_LEVEL=warn`, `execute` prints nothing).
 - **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The Novastrix plugins must be installed there for plugin tests (`bin/console plugin:install -n --activate <Name>` inside the container). The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
 - **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
 

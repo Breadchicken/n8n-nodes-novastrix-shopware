@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- `npm run quickstart`: local n8n with a login, a Shopware credential from `.env` and seven example workflows (`examples/workflows`) covering every resource.
 - `Shopware Admin API` credential (integration / client_credentials) with cached, auto-refreshing access token.
 - `Shopware` node with the `System > Get Version` operation to verify connectivity.
 - Product resource: Create, Create or Update (by product number), Delete, Get, Get Many, Update.
