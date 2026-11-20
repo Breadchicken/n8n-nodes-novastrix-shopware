@@ -92,9 +92,10 @@ The node must fully support the author's own Shopware plugins (source: `~/Docume
   - Supplier: `import-product-suppliers` maps `supplierArticleNumber` -> `supplierNumber`; `selectionStrategy: null` resets to the global default. The plugin does not validate strategy values, so the node offers only valid ones.
   - Product Dashboard: `audit/product` returns 409 `no_finished_run` until one full audit run has finished.
   - Configurator: one configurator per product and position (plugin validates, code `NOVASTRIX_CONFIGURATOR__DUPLICATE_POSITION`); `productId` is a plain string, not an association; `configuration` is one JSON column, so updates merge into the stored value.
+  - Back in Stock: entity `novastrix_bis_subscription`. Creating subscriptions from n8n is intentionally not offered (it would bypass the double opt-in; consent must come from the storefront). `optInToken` and `unsubscribeToken` are stripped from every output because they act in the customer's name. Unsubscribe writes the same as the plugin's link (`status: unsubscribed`, `optInToken: null`). `resend-bulk` silently skips invalid IDs, so the node validates them first. Tokens are 64 hex chars; mails are sent through the message queue (synchronous in the dev shop, visible in Mailpit on :8025).
   - Custom fields of plugins are translated: they are written in the language of the `sw-language-id` header.
 - Intentionally not supported: **Variant Creator** (still experimental; a draft resource was built and removed on 2026-11-20, see git history of commit 972193a).
-- Not covered yet (next resources): Back in Stock subscriptions and actions, Open Carts, Search (synonyms, boosting), Lexikon, Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
+- Not covered yet (next resources): Open Carts, Search (synonyms, boosting), Lexikon, Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
 
 ## Name resolution (core feature)
 

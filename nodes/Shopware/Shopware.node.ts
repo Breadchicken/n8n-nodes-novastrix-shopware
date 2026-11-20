@@ -8,6 +8,8 @@ import type {
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { listSearch } from './listSearch';
+import { backInStockFields, backInStockOperations } from './resources/backInStock/description';
+import { executeBackInStock } from './resources/backInStock/execute';
 import { configuratorFields, configuratorOperations } from './resources/configurator/description';
 import { executeConfigurator } from './resources/configurator/execute';
 import { loadOptions } from './loadOptions';
@@ -50,6 +52,11 @@ export class Shopware implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Back in Stock (Novastrix)',
+						value: 'backInStock',
+						description: 'Subscriptions and notifications of the Novastrix Back in Stock plugin',
+					},
+					{
 						name: 'Configurator (Novastrix)',
 						value: 'configurator',
 						description: 'Product configurators of the Novastrix Product Configurator plugin',
@@ -65,6 +72,8 @@ export class Shopware implements INodeType {
 				],
 				default: 'product',
 			},
+			...backInStockOperations,
+			...backInStockFields,
 			...configuratorOperations,
 			...configuratorFields,
 			...productOperations,
@@ -91,6 +100,9 @@ export class Shopware implements INodeType {
 				let responseData: IDataObject | IDataObject[];
 
 				switch (resource) {
+					case 'backInStock':
+						responseData = await executeBackInStock.call(this, state, operation, i);
+						break;
 					case 'configurator':
 						responseData = await executeConfigurator.call(this, state, operation, i);
 						break;

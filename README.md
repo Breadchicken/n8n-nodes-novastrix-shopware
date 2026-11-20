@@ -37,6 +37,7 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 
 | Resource | Operations |
 |---|---|
+| Back in Stock (Novastrix) | Get, Get Many, Unsubscribe (by ID or all of an email), Resend Notification, Get Failed Notifications, Retry Failed Notification, Get Demand, Get Recovered Revenue |
 | Configurator (Novastrix) | Create, Delete, Get, Get Many, Update |
 | Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit |
 | System | Get Version |
@@ -82,7 +83,7 @@ The node fully supports the product data of the [Novastrix](https://novastrix.co
 | Deficiency Description | Product: *Deficiency: Is Defective Item*, *Deficiency: Description* |
 | EU Warranty Label | Product: *EU Guarantee: Confirmed*, *EU Guarantee: Months*. Uses the native Shopware fields on 6.7.14+ and the plugin fields before; durations are validated (30–600 months, half-year steps). |
 | SEO | Product: *SEO: FAQ* (question/answer pairs, the node builds the HTML), *SEO: Price Valid Until*, *SEO: Disable Product Schema* |
-| Back in Stock | Product: *Back in Stock: Disable Alerts*, *Back in Stock: Pre-Launch* |
+| Back in Stock | Product: *Back in Stock: Disable Alerts*, *Back in Stock: Pre-Launch*. Resource *Back in Stock*: list subscriptions (filter by status, email, product incl. variants, sales channel, VIP, date), unsubscribe one or all of an email address, resend notifications, inspect and retry failed mails, demand per variant, recovered revenue. Subscriptions cannot be created from n8n, so the double opt-in cannot be bypassed; unsubscribe tokens are never returned. |
 | Supplier Management | Product: suppliers with purchase price, stock, delivery time, priority (suppliers by number or name), selection strategy |
 | Product Dashboard | Product: *Run Quality Audit*, *Get Quality Audit* (score, grade, failed criteria, priority) |
 | Product Configurator | Resource *Configurator*: steps as form fields, products by number or name, dependencies by step name, or the raw JSON |
