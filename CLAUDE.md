@@ -177,6 +177,11 @@ How the token is handled, and why:
 
 - **Unit tests:** vitest under `test/`. Cover pure functions (URL, errors, criteria, resolver) and `preAuthentication` with a mocked `helpers.httpRequest`. For operations, mock `IExecuteFunctions` and stub `helpers.httpRequestWithAuthentication`. Use `nock` for transport-level tests.
 - **Integration against a real shop:** run the compiled node with a minimal `IExecuteFunctions` stub that forwards `httpRequestWithAuthentication` to `fetch`. Cover create → get → update → upsert → getAll → delete and count token requests (must be 1).
+- **Real n8n, headless (do this for every new operation before calling it done):** the stub harness does not cover n8n's own request, binary and credential handling.
+  - Isolated home: `N8N_USER_FOLDER=<scratch>/n8nhome`, symlink the repo to `<home>/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware`. In this mode the node type is **`CUSTOM.shopware`** (installed from npm it is `n8n-nodes-novastrix-shopware.shopware`).
+  - `npx n8n import:credentials --input=creds.json` (plain `data` object is encrypted on import; set `accessToken` to garbage to exercise the 401 refresh), `npx n8n import:workflow --input=wf.json`, `npx n8n execute --id=<id> --rawOutput`.
+  - Verify binaries with a Code node (`this.helpers.getBinaryDataBuffer`). A node with zero output items stops the workflow, so test such operations in their own workflow.
+  - Dropdowns and resource locators: `npx n8n start` on a spare port, `POST /rest/owner/setup` + `/rest/login`, then `POST /rest/dynamic-node-parameters/options` (loadOptions) and `/rest/dynamic-node-parameters/resource-locator-results` (listSearch) with `nodeTypeAndVersion: { name: 'CUSTOM.shopware', version: 1 }`.
 - **Manual end-to-end:** `npm run dev` against a local Shopware 6.7 shop. The Novastrix plugins must be installed there for plugin tests (`bin/console plugin:install -n --activate <Name>` inside the container). The dev shop from the `shopware-plugins` repo runs at `http://localhost:8080` (admin/shopware). Create an integration under Settings > System > Integrations.
 - **Before submitting for verification:** `npx @n8n/scan-community-package n8n-nodes-novastrix-shopware`.
 
