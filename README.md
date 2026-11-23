@@ -2,15 +2,17 @@
 
 An [n8n](https://n8n.io/) community node for the [Shopware 6](https://www.shopware.com/) Admin API.
 
-> **Status: early development.** Products and orders are supported; more resources are being added. See the [changelog](CHANGELOG.md).
+> **Status: 0.x.** Products, orders and the Shopware Trigger are ready; more resources are being added, and details may still change before 1.0. See the [changelog](CHANGELOG.md).
 
-Planned highlights:
+Highlights:
 
 - **Use names instead of IDs.** Fields that take a Shopware ID also accept a name or natural key, such as a product number, `EUR`, `19%`, a sales channel name or a category path. The node resolves it to the ID for you.
 - **Searchable pickers** for all entities, with real pagination even in large catalogs.
-- **Full DAL criteria search**: filters, sorting, associations and aggregations.
-- **Bulk create, update and delete** through Shopware's sync API.
-- A **Shopware Trigger** that starts workflows on Shopware events and manages its webhooks itself.
+- **Orders end to end**: status changes (with automatic intermediate steps), tracking codes, invoices and other documents as PDF.
+- A **Shopware Trigger** that starts workflows on Shopware events, manages its webhooks itself and tells you which fields changed.
+- Full support for the [Novastrix Shopware plugins](https://novastrix.com/shopware).
+
+Planned: customers, categories and media, bulk writes through Shopware's sync API, and a free criteria search with aggregations.
 
 [Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Trigger](#trigger) · [Compatibility](#compatibility) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
 

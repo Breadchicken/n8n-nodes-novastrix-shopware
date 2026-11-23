@@ -45,7 +45,7 @@ npm run release    # release-it: lint, build, bump, changelog, tag, push -> CI p
 
 Docker setup facts:
 
-- `.env` (gitignored) feeds compose and the quickstart: `UID`/`GID` (owner of files the dev container writes), `SHOPWARE_*`, `N8N_VERSION` (image tag, default `stable`; `v3-nightly` for n8n 3), `N8N_BIND_ADDRESS` (on the dev server: the NetBird address `100.100.204.236`, never `0.0.0.0`), `N8N_PORT`, `N8N_WEBHOOK_URL`.
+- `.env` (gitignored) feeds compose and the quickstart: `UID`/`GID` (owner of files the dev container writes), `SHOPWARE_*`, `N8N_VERSION` (image tag, default `stable`; `v3-nightly` for n8n 3), `N8N_BIND_ADDRESS` (on the dev server: its private VPN address, never `0.0.0.0`), `N8N_PORT`, `N8N_WEBHOOK_URL`.
 - The repo is mounted read-only into the n8n container at `/home/node/.n8n/custom/node_modules/n8n-nodes-novastrix-shopware` (`$PACKAGE_DIR`), so the node type is `CUSTOM.shopware`.
 - The n8n image has no file watcher (`@parcel/watcher` missing). `docker/dev-watch.mjs` calls `POST /rest/dev/reload` (needs `N8N_DEV_RELOAD=true`, no auth) after each successful `tsc` pass.
 - `docker/n8n-start.sh` starts n8n first and then runs `scripts/quickstart.mjs --boot`: n8n 3 creates its encryption key in the database on the first start, so `import:credentials` before that fails with "No active encryption key found". Workflows are imported only on the first start (marker `~/.n8n/.quickstart`), the credential on every start.

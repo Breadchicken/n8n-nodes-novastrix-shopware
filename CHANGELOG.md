@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-23
+
+First release.
+
 ### Added
 
 - **Shopware Trigger** node: business events of the shop (incl. plugins), status changes and record changes; creates and deletes its Shopware webhooks automatically, secures them with a secret URL token and simplifies orders in the payload. Record changes list the changed fields without technical noise and include their new values.
@@ -27,7 +31,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Back in Stock resource (Novastrix Back in Stock): list and get subscriptions, unsubscribe by ID or email, resend notifications, list and retry failed notifications, demand per variant, recovered revenue.
 - Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.
 
-### Changed
-
-- Node and credential use the Novastrix logo.
-- Configurator step field *Limit* is now *Max Products Shown*.
+[Unreleased]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/releases/tag/0.1.0
