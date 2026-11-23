@@ -21,3 +21,7 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    ignore:
+      # isolated-vm (via n8n-workflow) needs the Node major that n8n itself uses.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']

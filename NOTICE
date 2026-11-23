@@ -1,0 +1,16 @@
+n8n-nodes-novastrix-shopware
+Copyright (c) 2026 Novastrix (https://novastrix.com)
+
+The source code is licensed under the MIT License (see LICENSE).
+
+Trademarks
+"Novastrix", the Novastrix logo (icons/novastrix.svg, icons/novastrix.dark.svg)
+and the names of the Novastrix Shopware plugins are trademarks of Novastrix.
+The MIT License does not grant any rights to use them. Forks and derived
+works must not use the Novastrix name or logo for their own package, node,
+credential or listing, and must not suggest that they are made or endorsed
+by Novastrix. Replace the icons and the "Novastrix" naming before publishing
+a derived package.
+
+Shopware is a trademark of shopware AG. n8n is a trademark of n8n GmbH.
+This project is not affiliated with or endorsed by either.

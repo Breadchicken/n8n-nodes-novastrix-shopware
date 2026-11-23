@@ -212,4 +212,6 @@ Releases are published to npm from GitHub Actions with provenance whenever a ver
 
 ## License
 
-[MIT](LICENSE) © Novastrix
+The code is licensed under [MIT](LICENSE) © Novastrix. Keep the copyright notice when you reuse it.
+
+The name "Novastrix", the Novastrix logo and the plugin names are trademarks of Novastrix and are **not** covered by the MIT License. Derived packages must use their own name and icon, see [NOTICE](NOTICE). Shopware and n8n are trademarks of their owners; this project is not affiliated with them.
