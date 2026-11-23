@@ -54,6 +54,15 @@ Docker setup facts:
 
 Publishing happens **only** from GitHub Actions (`.github/workflows/publish.yml`, triggered by a `x.y.z` tag) with npm provenance. Since 2026-05-01 n8n requires this. Never run `npm publish` locally.
 
+Release facts (first release 0.1.0 on 2026-11-23):
+
+- Release by hand, not with `npm run release`: locally it runs `auto-changelog -p`, which overwrites the curated CHANGELOG. Steps: move `[Unreleased]` entries to `## [x.y.z] - date` in CHANGELOG, set `version` in `package.json`, commit, `git tag -a x.y.z -m x.y.z && git push origin x.y.z`. In CI, `n8n-node release` only lints, builds and runs `npm publish` with provenance.
+- `publishConfig: { access: public, provenance: true }` is required: npm refuses provenance for a new package without explicit public access (EUSAGE), and only for **public** GitHub repos (E422).
+- npm token problems seen: a token limited to the `@novastrix` scope gives 403 for this unscoped package.
+- A publish by token can end up **staged**: the registry then shows only the placeholder `0.0.0-stage` until a maintainer approves the version with 2FA (npmjs.com or `npm stage approve`). From about January 2027, tokens can only stage. Use Trusted Publishing (OIDC, `publish.yml`, environment `npm`, "allow npm publish" enabled) instead of tokens.
+- GitHub (public repo): ruleset "Protect main" (no deletion/force push, PR + CI check `build`, repository admins bypass, so direct pushes by the maintainer still work), ruleset "Protect release tags" (`refs/tags/*.*.*`, only admins create/update/delete), environment `npm` (deployments only from tags `*.*.*`), actions pinned to commit SHAs and limited to GitHub-owned ones, fork PR workflows need approval, secret scanning with push protection, Dependabot, CodeQL default setup, private vulnerability reporting.
+- License: MIT is mandatory for n8n verification. The Novastrix name and logo are excluded via `NOTICE` (trademarks).
+
 ## Layout
 
 ```
