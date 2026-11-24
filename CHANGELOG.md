@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- The nodes are now called **Shopware Novastrix** and **Shopware Novastrix Trigger**, so they can be told apart from other Shopware nodes in the nodes panel. Node types are unchanged; existing workflows keep working.
+- The nodes panel entry describes the whole package instead of only the trigger.
+- The System action reads "Get the shop version".
+
+### Fixed
+
+- On n8n 2.x, API errors showed only "Bad request - please check your parameters" instead of Shopware's error details, and a missing Novastrix plugin was reported as a plain 404. n8n now wraps failed requests itself; the node sets its message on that error.
+
 ## [0.1.0] - 2026-11-23
 
 First release.

@@ -9,7 +9,7 @@ Highlights:
 - **Use names instead of IDs.** Fields that take a Shopware ID also accept a name or natural key, such as a product number, `EUR`, `19%`, a sales channel name or a category path. The node resolves it to the ID for you.
 - **Searchable pickers** for all entities, with real pagination even in large catalogs.
 - **Orders end to end**: status changes (with automatic intermediate steps), tracking codes, invoices and other documents as PDF.
-- A **Shopware Trigger** that starts workflows on Shopware events, manages its webhooks itself and tells you which fields changed.
+- A **Shopware Novastrix Trigger** that starts workflows on Shopware events, manages its webhooks itself and tells you which fields changed.
 - Full support for the [Novastrix Shopware plugins](https://novastrix.com/shopware).
 
 Planned: customers, categories and media, bulk writes through Shopware's sync API, and a free criteria search with aggregations.
@@ -18,7 +18,7 @@ Planned: customers, categories and media, bulk writes through Shopware's sync AP
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation and install the package `n8n-nodes-novastrix-shopware`.
+Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation and install the package `n8n-nodes-novastrix-shopware`. In the nodes panel it appears as **Shopware Novastrix** (actions and trigger in one entry), which tells it apart from other Shopware nodes.
 
 ## Credentials
 
@@ -104,7 +104,7 @@ Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create 
 
 ## Trigger
 
-**Shopware Trigger** starts a workflow when something happens in the shop. Pick one or more events:
+**Shopware Novastrix Trigger** starts a workflow when something happens in the shop. Pick one or more events:
 
 - **Business events from your shop**, including plugin events: *Order Placed*, *Customer Registered*, *Newsletter Registered*, *Contact Form Sent*, ...
 - **Status changes**: *Payment Status Changed to Paid*, *Delivery Status Changed to Shipped*, *Order Status Changed to Cancelled*, and the matching "Changed From" events.

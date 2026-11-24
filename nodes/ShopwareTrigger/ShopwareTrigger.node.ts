@@ -13,6 +13,7 @@ import type {
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { httpStatus, shopwareApiRequest, shopwareSearch } from '../Shopware/shared/transport';
+import { apiError } from '../Shopware/shared/errors';
 import { changedValues, eventOptions, webhookItems } from './events';
 
 /** Query parameter carrying the per-webhook secret. Shopware signs webhooks only for apps. */
@@ -27,7 +28,7 @@ interface TriggerState extends IDataObject {
 
 export class ShopwareTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Shopware Trigger',
+		displayName: 'Shopware Novastrix Trigger',
 		name: 'shopwareTrigger',
 		icon: {
 			light: 'file:../../icons/novastrix.svg',
@@ -36,9 +37,12 @@ export class ShopwareTrigger implements INodeType {
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["events"].join(", ")}}',
-		description: 'Starts the workflow when something happens in Shopware 6',
+		// The nodes panel merges this trigger into the Shopware node's entry and shows the trigger's
+		// description for both, so it has to describe the whole package.
+		description:
+			'Manage products, orders and Novastrix plugin data in Shopware 6, and start workflows on shop events',
 		defaults: {
-			name: 'Shopware Trigger',
+			name: 'Shopware Novastrix Trigger',
 		},
 		inputs: [],
 		outputs: [NodeConnectionTypes.Main],
@@ -303,7 +307,7 @@ function explainCreateError(context: IHookFunctions, error: unknown, url: string
 	const { message, description } = error as { message?: string; description?: string };
 	const text = `${message ?? ''} ${description ?? ''}`;
 	if (text.includes('network policy') || text.includes('not allowed')) {
-		return new NodeApiError(context.getNode(), error as JsonObject, {
+		return apiError(context.getNode(), error, {
 			message: 'Shopware does not accept the webhook URL',
 			description: `Shopware 6.7 sends webhooks only to public HTTPS addresses, and the URL ${url.split('?')[0]} is not one. Run n8n under a public HTTPS URL (n8n setting WEBHOOK_URL), or for a local test shop allow it with "shopware.app_system.enable_url_validation: false".`,
 		});

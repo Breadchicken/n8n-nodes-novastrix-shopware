@@ -25,7 +25,7 @@ import { createExecutionState } from './shared/state';
 
 export class Shopware implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Shopware',
+		displayName: 'Shopware Novastrix',
 		name: 'shopware',
 		icon: {
 			light: 'file:../../icons/novastrix.svg',
@@ -34,9 +34,9 @@ export class Shopware implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Consume the Shopware 6 Admin API',
+		description: 'Manage products, orders and Novastrix plugin data in Shopware 6',
 		defaults: {
-			name: 'Shopware',
+			name: 'Shopware Novastrix',
 		},
 		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
