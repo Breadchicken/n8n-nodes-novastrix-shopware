@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- **Lexikon** (Novastrix Lexikon plugin): resources *Lexikon Entry* (Create, Create or Update by term, Delete, Get, Get Many, Update) and *Lexikon Category* (Create, Delete, Get, Get Many, Update). Entries take synonyms, meta data, category, cover image, gallery, related entries and sales channels by name; Update replaces the given lists. Get and Get Many return a simplified entry with names instead of IDs.
+- Media files can be picked from a searchable list or looked up by file name.
+- Example workflow *Shopware 9 · Lexikon*.
+
+### Changed
+
+- *Guarantee (Months)* and *Guarantee Confirmed* are now regular product fields (Additional Fields / Update Fields) and write Shopware's native guarantee fields. They need Shopware 6.7.14 or later; older shops get a clear error. Workflows that set them under *Novastrix Plugin Fields* must set them again.
+
+### Removed
+
+- Support for the Novastrix EU Warranty Label plugin (custom fields `novastrix_eu_guarantee_*`), superseded by the native Shopware fields.
+
 ## [0.1.1] - 2026-11-24
 
 ### Changed

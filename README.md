@@ -40,8 +40,10 @@ The node authenticates with a Shopware **integration** (OAuth 2.0 client credent
 |---|---|
 | Back in Stock (Novastrix) | Get, Get Many, Unsubscribe (by ID or all of an email), Resend Notification, Get Failed Notifications, Retry Failed Notification, Get Demand, Get Recovered Revenue |
 | Configurator (Novastrix) | Create, Delete, Get, Get Many, Update |
+| Lexikon Category (Novastrix) | Create, Delete, Get, Get Many, Update |
+| Lexikon Entry (Novastrix) | Create, Create or Update (by term), Delete, Get, Get Many, Update |
 | Order | Get, Get Many, Update, Change Status (order, payment, delivery), Add Tracking Code, Create Document, Get Documents |
-| Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit |
+| Product | Create, Create or Update (by product number), Delete, Get, Get Many, Update, Get Quality Audit, Run Quality Audit. *Guarantee (Months)* and *Guarantee Confirmed* write Shopware's native guarantee fields (6.7.14+; 30–600 months in half-year steps). |
 | System | Get Version |
 
 More resources are in progress.
@@ -88,17 +90,17 @@ Matching ignores case. If a value matches more than one record, the node stops w
 
 ## Novastrix plugins
 
-The node fully supports the [Novastrix Shopware plugins](https://novastrix.com/shopware). Before using plugin data, the node checks that the plugin is installed and active in the shop (one lookup per run). If it is missing or inactive, the node stops with a message naming the plugin and a link to [novastrix.com/shopware](https://novastrix.com/shopware), instead of storing data that has no effect. If the integration may not read the plugin list, the check is skipped and a missing plugin is reported from Shopware's 404.
+The node supports the [Novastrix Shopware plugins](https://novastrix.com/shopware) listed below. Before using plugin data, the node checks that the plugin is installed and active in the shop (one lookup per run). If it is missing or inactive, the node stops with a message naming the plugin and a link to [novastrix.com/shopware](https://novastrix.com/shopware), instead of storing data that has no effect. If the integration may not read the plugin list, the check is skipped and a missing plugin is reported from Shopware's 404.
 
 | Plugin | Support |
 |---|---|
 | Deficiency Description | Product: *Deficiency: Is Defective Item*, *Deficiency: Description* |
-| EU Warranty Label | Product: *EU Guarantee: Confirmed*, *EU Guarantee: Months*. Uses the native Shopware fields on 6.7.14+ and the plugin fields before; durations are validated (30–600 months, half-year steps). |
 | SEO | Product: *SEO: FAQ* (question/answer pairs, the node builds the HTML), *SEO: Price Valid Until*, *SEO: Disable Product Schema* |
 | Back in Stock | Product: *Back in Stock: Disable Alerts*, *Back in Stock: Pre-Launch*. Resource *Back in Stock*: list subscriptions (filter by status, email, product incl. variants, sales channel, VIP, date), unsubscribe one or all of an email address, resend notifications, inspect and retry failed mails, demand per variant, recovered revenue. Subscriptions cannot be created from n8n, so the double opt-in cannot be bypassed; unsubscribe tokens are never returned. |
 | Supplier Management | Product: suppliers with purchase price, stock, delivery time, priority (suppliers by number or name), selection strategy |
 | Product Dashboard | Product: *Run Quality Audit*, *Get Quality Audit* (score, grade, failed criteria, priority) |
 | Product Configurator | Resource *Configurator*: steps as form fields, products by number or name, dependencies by step name, or the raw JSON |
+| Lexikon | Resources *Lexikon Entry* and *Lexikon Category*: terms with short definition, description, synonyms, meta data, category, cover image and gallery (existing media by file name), related entries and sales channels. Create or Update finds an entry by its term. On Update, given lists (gallery, related entries, sales channels) replace the current ones. Translated fields are written in the language chosen under Options. |
 
 Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create or Update and Update. To read it, select `customFields` or the plugin associations (e.g. `pflaumSuppliers`) in Get.
 
@@ -175,6 +177,7 @@ On the first start the n8n container gets the `Shopware (Quickstart)` credential
 | Shopware 6 · Back in Stock | subscriptions, demand, recovered revenue, failed mails (Novastrix plugin) | no |
 | Shopware 7 · Configurator and audit | configurators and product quality audit (Novastrix plugins) | no |
 | Shopware 8 · Trigger | starts on new orders and paid orders (see [Reachability](#reachability)) | no |
+| Shopware 9 · Lexikon | category and two entries with synonyms, sales channel and related entry, A-Z filter (Novastrix plugin) | yes, removes them again |
 
 Open a workflow and click **Execute workflow**. Workflows marked "writes data" change your shop, so use a test shop for them.
 

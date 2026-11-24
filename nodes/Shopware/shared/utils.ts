@@ -65,3 +65,14 @@ export function round(value: number, decimals: number): number {
 export function grossToNet(gross: number, taxRate: number): number {
 	return round(gross / (1 + taxRate / 100), 4);
 }
+
+/** Copies the given keys that have a value (not undefined, not an empty string). */
+export function pick(source: IDataObject, keys: string[]): IDataObject {
+	const result: IDataObject = {};
+	for (const key of keys) {
+		if (source[key] !== undefined && source[key] !== '') {
+			result[key] = source[key];
+		}
+	}
+	return result;
+}

@@ -16,10 +16,8 @@ import { shopwareApiRequest } from '../../shared/transport';
  * Product data of the Novastrix plugins. Everything here is optional and only has an effect when
  * the corresponding plugin is installed:
  *
- * - Back in Stock, Deficiency Description (Mängelbeschreibung), EU Warranty Label and SEO store
- *   their product data in `product.customFields`.
- * - EU Warranty Label backports the native `guaranteeMonths`/`guaranteeConfirmed` fields
- *   (core 6.7.14+). On shops with native fields we write those, as the plugin then switches off.
+ * - Back in Stock, Deficiency Description (Mängelbeschreibung) and SEO store their product data in
+ *   `product.customFields`.
  * - Supplier Management keeps suppliers in its own entities; we use the plugin's upsert routes,
  *   which match by (product, supplier) and therefore never create duplicates.
  */
@@ -32,14 +30,12 @@ const CUSTOM_FIELDS = {
 	bisPrelaunch: 'novastrixBis_prelaunch',
 	defectConsent: 'novastrix_defect_consent',
 	defectText: 'novastrix_defect_consent_text',
-	guaranteeConfirmed: 'novastrix_eu_guarantee_confirmed',
-	guaranteeMonths: 'novastrix_eu_guarantee_months',
 	seoSchemaDisabled: 'novastrix_seo_product_schema_disabled',
 	seoFaqHtml: 'novastrix_seo_product_faq_html',
 	seoPriceValidUntil: 'novastrix_seo_price_valid_until',
 } as const;
 
-/** Plugin behind each field of the collection. EU guarantee is checked in `applyGuarantee`. */
+/** Plugin behind each field of the collection. */
 const FIELD_PLUGINS: Record<string, NovastrixPlugin | undefined> = {
 	bisDisabled: PLUGINS.backInStock,
 	bisPrelaunch: PLUGINS.backInStock,
@@ -104,21 +100,6 @@ export const novastrixProductFields: INodeProperties = {
 			default: true,
 			description:
 				'Whether the product is sold with defects. Customers must accept the description at checkout.',
-		},
-		{
-			displayName: 'EU Guarantee: Confirmed',
-			name: 'guaranteeConfirmed',
-			type: 'boolean',
-			default: true,
-			description: 'Whether the manufacturer confirmed the durability guarantee (EU GARAN label)',
-		},
-		{
-			displayName: 'EU Guarantee: Months',
-			name: 'guaranteeMonths',
-			type: 'number',
-			typeOptions: { minValue: 30, maxValue: 600, numberStepSize: 6 },
-			default: 36,
-			description: 'Guarantee duration in months: 30 to 600, in half-year steps (30, 36, 42, ...)',
 		},
 		{
 			displayName: 'SEO: Disable Product Schema',
@@ -318,8 +299,6 @@ export async function buildPluginWrite(
 		result.customFields[CUSTOM_FIELDS.seoFaqHtml] = buildFaqHtml(faq);
 	}
 
-	await applyGuarantee.call(this, state, input, result);
-
 	const supplierItems = (input.suppliers as { items?: IDataObject[] } | undefined)?.items ?? [];
 	const strategy = input.supplierStrategy as string | undefined;
 	if (supplierItems.length > 0 || strategy !== undefined) {
@@ -340,46 +319,6 @@ export async function buildPluginWrite(
 	}
 
 	return result;
-}
-
-/**
- * EU guarantee: native fields on 6.7.14+, plugin custom fields before. The value rule matches
- * both validators (core: 30-600 in half-year steps, plugin: > 24 in half-year steps), so users
- * get the error before the request instead of a 400.
- */
-async function applyGuarantee(
-	this: IExecuteFunctions,
-	state: ExecutionState,
-	input: IDataObject,
-	result: PluginWrite,
-): Promise<void> {
-	if (input.guaranteeMonths === undefined && input.guaranteeConfirmed === undefined) {
-		return;
-	}
-
-	if (input.guaranteeMonths !== undefined) {
-		const months = Number(input.guaranteeMonths);
-		if (!Number.isInteger(months) || months < 30 || months > 600 || months % 6 !== 0) {
-			throw new NodeOperationError(
-				this.getNode(),
-				`Invalid EU guarantee duration "${String(input.guaranteeMonths)}"`,
-				{ description: 'Use 30 to 600 months in half-year steps (30, 36, 42, ...).' },
-			);
-		}
-	}
-
-	const native = await state.hasField('product', 'guaranteeMonths');
-	if (native) {
-		if (input.guaranteeMonths !== undefined) result.fields.guaranteeMonths = input.guaranteeMonths;
-		if (input.guaranteeConfirmed !== undefined)
-			result.fields.guaranteeConfirmed = input.guaranteeConfirmed;
-	} else {
-		await state.requirePlugin(PLUGINS.euWarranty);
-		if (input.guaranteeMonths !== undefined)
-			result.customFields[CUSTOM_FIELDS.guaranteeMonths] = input.guaranteeMonths;
-		if (input.guaranteeConfirmed !== undefined)
-			result.customFields[CUSTOM_FIELDS.guaranteeConfirmed] = input.guaranteeConfirmed;
-	}
 }
 
 /** Builds the `<h3>Question</h3><p>Answer</p>` markup the SEO plugin parses. */

@@ -1,0 +1,305 @@
+{
+	"id": "nvsQuickstart009",
+	"name": "Shopware 9 · Lexikon",
+	"active": false,
+	"nodes": [
+		{
+			"id": "trigger",
+			"name": "Run",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [0, 0],
+			"parameters": {}
+		},
+		{
+			"id": "note",
+			"name": "About",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-40, -320],
+			"parameters": {
+				"content": "## Novastrix Lexikon\nNeeds the Lexikon plugin, see https://novastrix.com/shopware\n- **Create Category** and two entries. Create or Update finds an entry by its **term**\n- **Polyester**: synonyms, Storefront only. **Cotton**: links Polyester as related entry\n- **Get Entries Under P**: A-Z index filter\n- The last three nodes delete everything again, so the workflow can run repeatedly",
+				"width": 760,
+				"height": 260
+			}
+		},
+		{
+			"id": "n0",
+			"name": "Create Category",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [260, 0],
+			"parameters": {
+				"resource": "lexikonCategory",
+				"operation": "create",
+				"name": "n8n Example Materials",
+				"additionalFields": {
+					"position": 10
+				},
+				"options": {}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n1",
+			"name": "Create or Update Polyester",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [520, 0],
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "upsert",
+				"term": "Polyester",
+				"additionalFields": {
+					"shortDefinition": "Synthetic fibre made from petroleum",
+					"description": "<p>Polyester is hard-wearing, dries quickly and keeps its shape.</p>",
+					"synonyms": "PES, polyester fibre",
+					"category": {
+						"__rl": true,
+						"mode": "name",
+						"value": "n8n Example Materials"
+					},
+					"salesChannels": {
+						"items": [
+							{
+								"value": {
+									"__rl": true,
+									"mode": "name",
+									"value": "Storefront"
+								}
+							}
+						]
+					}
+				},
+				"simplify": true,
+				"options": {}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n2",
+			"name": "Create or Update Cotton",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [780, 0],
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "upsert",
+				"term": "Cotton",
+				"additionalFields": {
+					"shortDefinition": "Natural fibre from the cotton plant",
+					"category": {
+						"__rl": true,
+						"mode": "name",
+						"value": "n8n Example Materials"
+					},
+					"relatedEntries": {
+						"items": [
+							{
+								"value": {
+									"__rl": true,
+									"mode": "name",
+									"value": "Polyester"
+								}
+							}
+						]
+					}
+				},
+				"simplify": true,
+				"options": {}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			}
+		},
+		{
+			"id": "n3",
+			"name": "Get Entries Under P",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [1040, 0],
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "getAll",
+				"returnAll": true,
+				"filters": {
+					"initialLetter": "P"
+				},
+				"simplify": true,
+				"options": {}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		},
+		{
+			"id": "n4",
+			"name": "Delete Polyester",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [1300, 0],
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "delete",
+				"lexikonEntry": {
+					"__rl": true,
+					"mode": "name",
+					"value": "Polyester"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		},
+		{
+			"id": "n5",
+			"name": "Delete Cotton",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [1560, 0],
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "delete",
+				"lexikonEntry": {
+					"__rl": true,
+					"mode": "name",
+					"value": "Cotton"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		},
+		{
+			"id": "n6",
+			"name": "Delete Category",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [1820, 0],
+			"parameters": {
+				"resource": "lexikonCategory",
+				"operation": "delete",
+				"lexikonCategory": {
+					"__rl": true,
+					"mode": "name",
+					"value": "n8n Example Materials"
+				}
+			},
+			"credentials": {
+				"shopwareAdminApi": {
+					"id": "nvsQuickstartCr1",
+					"name": "Shopware (Quickstart)"
+				}
+			},
+			"executeOnce": true
+		}
+	],
+	"connections": {
+		"Run": {
+			"main": [
+				[
+					{
+						"node": "Create Category",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create Category": {
+			"main": [
+				[
+					{
+						"node": "Create or Update Polyester",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create or Update Polyester": {
+			"main": [
+				[
+					{
+						"node": "Create or Update Cotton",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create or Update Cotton": {
+			"main": [
+				[
+					{
+						"node": "Get Entries Under P",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Entries Under P": {
+			"main": [
+				[
+					{
+						"node": "Delete Polyester",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Delete Polyester": {
+			"main": [
+				[
+					{
+						"node": "Delete Cotton",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Delete Cotton": {
+			"main": [
+				[
+					{
+						"node": "Delete Category",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {}
+}
