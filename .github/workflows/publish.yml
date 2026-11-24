@@ -101,5 +101,3 @@ jobs:
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Shows the OIDC token exchange in the log (trusted publishing diagnostics).
-          NPM_CONFIG_LOGLEVEL: verbose
