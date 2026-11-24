@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-novastrix-shopware",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"description": "n8n community node for the Shopware 6 Admin API with name-to-ID resolution, criteria search and bulk sync.",
 	"license": "MIT",
 	"homepage": "https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#readme",

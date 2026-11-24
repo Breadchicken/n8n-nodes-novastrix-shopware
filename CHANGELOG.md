@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-24
+
 ### Added
 
 - **Lexikon** (Novastrix Lexikon plugin): resources *Lexikon Entry* (Create, Create or Update by term, Delete, Get, Get Many, Update) and *Lexikon Category* (Create, Delete, Get, Get Many, Update). Entries take synonyms, meta data, category, cover image, gallery, related entries and sales channels by name; Update replaces the given lists. Get and Get Many return a simplified entry with names instead of IDs.
@@ -57,6 +59,7 @@ First release.
 - Back in Stock resource (Novastrix Back in Stock): list and get subscriptions, unsubscribe by ID or email, resend notifications, list and retry failed notifications, demand per variant, recovered revenue.
 - Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.
 
-[Unreleased]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/releases/tag/0.1.0
