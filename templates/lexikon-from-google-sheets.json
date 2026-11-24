@@ -1,0 +1,681 @@
+{
+	"name": "Maintain the Shopware Novastrix Lexikon from Google Sheets",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Maintain the Shopware Novastrix Lexikon from Google Sheets\n\n### How it works\nEditors keep the shop glossary in Google Sheets. The workflow reads every row, creates missing Lexikon categories and creates or updates each entry by its term, so running it again updates the entries instead of duplicating them. Synonyms are linked in the storefront like the term itself. Invalid rows and Shopware errors, for example a term that exists twice, are written back to the sheet.\n\n### Setup\n1. Self-hosted n8n only for now: install the community node **n8n-nodes-novastrix-shopware** (tested with 0.2.0, n8n 2.48 and 3.x, Shopware 6.7) via **Settings > Community nodes**. [Installation guide](https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#installation)\n2. In Shopware, create an integration under **Settings > System > Integrations** (access to the Lexikon plugin and read access to sales channels and languages) and add its access key ID and secret as a **Shopware Admin API** credential.\n3. Install the [Novastrix Lexikon](https://novastrix.com/shopware) plugin in Shopware.\n4. Connect a **Google Sheets** credential.\n5. Create a sheet with the columns `term`, `short_definition`, `description` (HTML allowed), `synonyms` (comma-separated), `category`, `status` and `message`.\n6. In **Configuration**, set the sheet URL and tab name. Optionally limit the entries to one sales channel and set the language, for example `de-DE`. Run the workflow and check the glossary in the storefront.\n\n### Customization\nReplace the manual trigger with a schedule, or add related entries and a cover image in **Create or Update Entry**.\n",
+				"height": 760,
+				"width": 560
+			},
+			"id": "1e0a43cd-d304-55e3-b525-b064369ed374",
+			"name": "Overview",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-700,
+				-400
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Read and check the sheet\nRows without a term are skipped.\n",
+				"height": 460,
+				"width": 1260,
+				"color": 7
+			},
+			"id": "3f564a7c-0cb1-5eb8-979f-d8d70f84cc23",
+			"name": "Section Read",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-60,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Create missing categories\nOne category per new name, created before its entries.\n",
+				"height": 540,
+				"width": 760,
+				"color": 7
+			},
+			"id": "809357ff-4220-5237-8563-af3a1469c434",
+			"name": "Section Categories",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1220,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Create or update entries\nMatched by term in the configured language.\n",
+				"height": 540,
+				"width": 280,
+				"color": 7
+			},
+			"id": "ead59318-7b24-5e57-aff4-cce1b051bb97",
+			"name": "Section Entries",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				2000,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Write the result back\nFills the status and message columns.\n",
+				"height": 780,
+				"width": 540,
+				"color": 7
+			},
+			"id": "ab0af6c6-eeff-5647-b216-6b6a3585e489",
+			"name": "Section Status",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				2300,
+				-360
+			]
+		},
+		{
+			"parameters": {},
+			"id": "3e359c62-ba3c-541e-9d7f-0f579ed10ca8",
+			"name": "When Clicking Execute Workflow",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [
+				0,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "475e217c-7d36-52f4-8ace-4d35f0263196",
+							"name": "spreadsheetUrl",
+							"value": "YOUR_GOOGLE_SHEET_URL",
+							"type": "string"
+						},
+						{
+							"id": "02f4a2d3-cb97-503d-b6b2-7b8993feecab",
+							"name": "sheetName",
+							"value": "Glossary",
+							"type": "string"
+						},
+						{
+							"id": "50c21382-6f15-57e1-95f0-69609afd4a7c",
+							"name": "salesChannel",
+							"value": "",
+							"type": "string"
+						},
+						{
+							"id": "cecc7eec-088e-59c7-a00a-45ac98269167",
+							"name": "language",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "5948e9b7-a5ed-55cb-998c-bf6e425cdc4c",
+			"name": "Configuration",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				240,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"documentId": {
+					"__rl": true,
+					"mode": "url",
+					"value": "={{ $('Configuration').first().json.spreadsheetUrl }}"
+				},
+				"sheetName": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.sheetName }}"
+				},
+				"options": {}
+			},
+			"id": "08beb2da-f3d6-520a-8069-db0019150b12",
+			"name": "Read Glossary Rows",
+			"type": "n8n-nodes-base.googleSheets",
+			"typeVersion": 4.5,
+			"position": [
+				480,
+				0
+			],
+			"credentials": {
+				"googleSheetsOAuth2Api": {
+					"name": "Google Sheets account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"jsCode": "// Checks each sheet row and prepares the values for the Lexikon.\nreturn $input.all().map((item) => {\n  const row = item.json;\n  const entry = {\n    row_number: row.row_number,\n    term: String(row.term ?? '').trim(),\n    shortDefinition: String(row.short_definition ?? '').trim(),\n    description: String(row.description ?? ''),\n    synonyms: String(row.synonyms ?? '').trim(),\n    category: String(row.category ?? '').trim(),\n  };\n  const problems = [];\n  if (!entry.term) problems.push('term is empty');\n  if (entry.shortDefinition.length > 255) problems.push('short_definition is longer than 255 characters');\n  return { json: { ...entry, valid: problems.length === 0, problem: problems.join('; ') } };\n});\n"
+			},
+			"id": "ffdfe841-924b-5cd3-9d10-8537bfc5135e",
+			"name": "Validate Rows",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [
+				760,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "34a09e40-a346-5478-8c64-1f18afe9bcac",
+							"leftValue": "={{ $json.valid }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"looseTypeValidation": true,
+				"options": {}
+			},
+			"id": "94cdadaf-b398-5b36-bae5-acb242a45f12",
+			"name": "Is Row Valid?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [
+				1000,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"resource": "lexikonCategory",
+				"operation": "getAll",
+				"returnAll": true,
+				"filters": {},
+				"options": {
+					"language": {
+						"__rl": true,
+						"mode": "name",
+						"value": "={{ $('Configuration').first().json.language }}"
+					}
+				}
+			},
+			"id": "60402512-4273-5b58-bdb9-7b8dba18bcd2",
+			"name": "Get Existing Categories",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				1280,
+				-100
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"executeOnce": true,
+			"alwaysOutputData": true
+		},
+		{
+			"parameters": {
+				"jsCode": "// Marks the first row of each category that does not exist in Shopware yet.\nconst existing = new Set(\n  $input.all().map((item) => String(item.json.name ?? '').trim().toLowerCase()).filter(Boolean),\n);\nreturn $('Is Row Valid?').all().map((item) => {\n  const key = item.json.category.toLowerCase();\n  const createCategory = key !== '' && !existing.has(key);\n  if (createCategory) existing.add(key);\n  return { json: { ...item.json, createCategory } };\n});\n"
+			},
+			"id": "c1796a28-c9fa-5668-9d5d-1d51ef5c0a56",
+			"name": "Plan Categories",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [
+				1520,
+				-100
+			]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "6dee8827-9d3b-5ec5-8b9b-2eaed06b5c12",
+							"leftValue": "={{ $json.createCategory }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"looseTypeValidation": true,
+				"options": {}
+			},
+			"id": "aac64a81-77b2-5349-9b1f-5cc5d81a0ca6",
+			"name": "Is New Category?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [
+				1740,
+				-100
+			]
+		},
+		{
+			"parameters": {
+				"resource": "lexikonCategory",
+				"operation": "create",
+				"name": "={{ $json.category }}",
+				"additionalFields": {},
+				"options": {
+					"language": {
+						"__rl": true,
+						"mode": "name",
+						"value": "={{ $('Configuration').first().json.language }}"
+					}
+				}
+			},
+			"id": "bae22b91-a4c2-57ae-86ec-9a0165204974",
+			"name": "Create Category",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				1880,
+				-260
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"resource": "lexikonEntry",
+				"operation": "upsert",
+				"term": "={{ $('Plan Categories').item.json.term }}",
+				"additionalFields": {
+					"shortDefinition": "={{ $('Plan Categories').item.json.shortDefinition }}",
+					"description": "={{ $('Plan Categories').item.json.description }}",
+					"synonyms": "={{ $('Plan Categories').item.json.synonyms }}",
+					"category": {
+						"__rl": true,
+						"mode": "name",
+						"value": "={{ $('Plan Categories').item.json.category }}"
+					},
+					"salesChannels": {
+						"items": [
+							{
+								"value": {
+									"__rl": true,
+									"mode": "name",
+									"value": "={{ $('Configuration').first().json.salesChannel }}"
+								}
+							}
+						]
+					}
+				},
+				"simplify": true,
+				"options": {
+					"language": {
+						"__rl": true,
+						"mode": "name",
+						"value": "={{ $('Configuration').first().json.language }}"
+					}
+				}
+			},
+			"id": "7a1b959a-7fd7-52b7-b5d2-4680d9af68f0",
+			"name": "Create or Update Entry",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				2080,
+				-100
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"onError": "continueErrorOutput"
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "da24fabc-1a41-5179-b37e-bae84d824dc0",
+							"name": "row_number",
+							"value": "={{ $('Plan Categories').item.json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "0e7b3c2e-f85b-5167-b9ab-8198db8d9353",
+							"name": "status",
+							"value": "imported",
+							"type": "string"
+						},
+						{
+							"id": "15d60634-0c9c-5763-80ed-00e92b8b52d2",
+							"name": "message",
+							"value": "={{ $now.toISO() }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "8369f084-2c4d-5151-a483-f8affa560d02",
+			"name": "Mark as Imported",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				2360,
+				-240
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "d1e66d34-ff0e-5fee-9567-c99998bf4930",
+							"name": "row_number",
+							"value": "={{ $('Plan Categories').item.json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "8c28aae8-2930-5e35-b57f-3d28bdb0895a",
+							"name": "status",
+							"value": "error",
+							"type": "string"
+						},
+						{
+							"id": "d2b2c5c1-7e46-50fc-b1d3-d67f94ef3833",
+							"name": "message",
+							"value": "={{ $json.error }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "8d3b62e6-6adf-5f55-9f51-3c88534a9c15",
+			"name": "Mark Import Error",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				2360,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "833a43de-fad6-5b0a-83a7-8f491db3e118",
+							"name": "row_number",
+							"value": "={{ $json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "c3f8135f-51bf-5cb9-a3e8-24b6362a52b4",
+							"name": "status",
+							"value": "invalid",
+							"type": "string"
+						},
+						{
+							"id": "6ccbd5bd-ddaa-59aa-86de-5ff41059fd46",
+							"name": "message",
+							"value": "={{ $json.problem }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "f0e186c3-96a8-510a-994d-f708164a4c75",
+			"name": "Mark Invalid Row",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				2360,
+				220
+			]
+		},
+		{
+			"parameters": {
+				"operation": "update",
+				"documentId": {
+					"__rl": true,
+					"mode": "url",
+					"value": "={{ $('Configuration').first().json.spreadsheetUrl }}"
+				},
+				"sheetName": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.sheetName }}"
+				},
+				"columns": {
+					"mappingMode": "autoMapInputData",
+					"value": {},
+					"matchingColumns": [
+						"row_number"
+					],
+					"schema": []
+				},
+				"options": {}
+			},
+			"id": "d35fea0f-88cb-59de-9cd8-264932876877",
+			"name": "Write Status to Sheet",
+			"type": "n8n-nodes-base.googleSheets",
+			"typeVersion": 4.5,
+			"position": [
+				2620,
+				0
+			],
+			"credentials": {
+				"googleSheetsOAuth2Api": {
+					"name": "Google Sheets account"
+				}
+			}
+		}
+	],
+	"connections": {
+		"When Clicking Execute Workflow": {
+			"main": [
+				[
+					{
+						"node": "Configuration",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Configuration": {
+			"main": [
+				[
+					{
+						"node": "Read Glossary Rows",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Read Glossary Rows": {
+			"main": [
+				[
+					{
+						"node": "Validate Rows",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Validate Rows": {
+			"main": [
+				[
+					{
+						"node": "Is Row Valid?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Is Row Valid?": {
+			"main": [
+				[
+					{
+						"node": "Get Existing Categories",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Mark Invalid Row",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Existing Categories": {
+			"main": [
+				[
+					{
+						"node": "Plan Categories",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Plan Categories": {
+			"main": [
+				[
+					{
+						"node": "Is New Category?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Is New Category?": {
+			"main": [
+				[
+					{
+						"node": "Create Category",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Create or Update Entry",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create Category": {
+			"main": [
+				[
+					{
+						"node": "Create or Update Entry",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create or Update Entry": {
+			"main": [
+				[
+					{
+						"node": "Mark as Imported",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Mark Import Error",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark as Imported": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark Import Error": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark Invalid Row": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

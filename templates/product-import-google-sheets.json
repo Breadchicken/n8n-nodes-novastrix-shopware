@@ -1,0 +1,542 @@
+{
+	"name": "Import and update Shopware products from Google Sheets",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Import and update Shopware products from Google Sheets\n\n### How it works\nEvery morning the workflow reads a product list from Google Sheets and creates or updates each product in Shopware by its product number, so repeated runs never create duplicates. Tax rate, manufacturer, category and sales channel are matched **by name**, so the sheet needs no Shopware IDs. Rows with missing or invalid values are skipped. The result of each row (imported, invalid or the Shopware error) is written back to the sheet.\n\n### Setup\n1. Self-hosted n8n only for now: install the community node **n8n-nodes-novastrix-shopware** (tested with 0.2.0, n8n 2.48 and 3.x, Shopware 6.7) via **Settings > Community nodes**. [Installation guide](https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#installation)\n2. In Shopware, create an integration under **Settings > System > Integrations** (read and write access to products, read access to taxes, manufacturers, categories and sales channels) and add its access key ID and secret as a **Shopware Admin API** credential.\n3. Connect a **Google Sheets** credential.\n4. Create a sheet with the columns `product_number`, `name`, `price` (gross), `stock`, `tax_rate`, `manufacturer`, `category`, `description`, `active`, `status` and `message`. Manufacturers and categories must already exist in Shopware; a category can be a path like `Home > Shoes`.\n5. In **Configuration**, set the sheet URL, the tab name, the default tax rate and the sales channel. Run the workflow once and check the products in Shopware.\n\n### Customization\nAdd more fields (EAN, weight, list price) under **Additional Fields** in **Create or Update Product**, or change the schedule.\n",
+				"height": 760,
+				"width": 600
+			},
+			"id": "1e0a43cd-d304-55e3-b525-b064369ed374",
+			"name": "Overview",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-760,
+				-400
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Read the sheet\nRuns daily and loads all product rows.\n",
+				"height": 340,
+				"width": 760,
+				"color": 7
+			},
+			"id": "3f564a7c-0cb1-5eb8-979f-d8d70f84cc23",
+			"name": "Section Read",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-60,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Check the rows\nInvalid rows are not sent to Shopware.\n",
+				"height": 340,
+				"width": 500,
+				"color": 7
+			},
+			"id": "88fb15c4-dd46-544d-be6d-8efc78ef566d",
+			"name": "Section Validate",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				720,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Create or update\nBy product number; tax, manufacturer and category by name.\n",
+				"height": 540,
+				"width": 260,
+				"color": 7
+			},
+			"id": "81c58089-3625-50a6-be8f-d009ef93addf",
+			"name": "Section Import",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1240,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Write the result back\nFills the status and message columns of each row.\n",
+				"height": 780,
+				"width": 540,
+				"color": 7
+			},
+			"id": "ab0af6c6-eeff-5647-b216-6b6a3585e489",
+			"name": "Section Status",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1520,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"triggerAtHour": 6
+						}
+					]
+				}
+			},
+			"id": "d8ce2db5-a412-5d66-b7ee-4d1ab4b3e8de",
+			"name": "Every Morning",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [
+				0,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "475e217c-7d36-52f4-8ace-4d35f0263196",
+							"name": "spreadsheetUrl",
+							"value": "YOUR_GOOGLE_SHEET_URL",
+							"type": "string"
+						},
+						{
+							"id": "02f4a2d3-cb97-503d-b6b2-7b8993feecab",
+							"name": "sheetName",
+							"value": "Products",
+							"type": "string"
+						},
+						{
+							"id": "16405adf-89d3-5976-8b68-41b584921582",
+							"name": "defaultTaxRate",
+							"value": "19",
+							"type": "string"
+						},
+						{
+							"id": "50c21382-6f15-57e1-95f0-69609afd4a7c",
+							"name": "salesChannel",
+							"value": "Storefront",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "5948e9b7-a5ed-55cb-998c-bf6e425cdc4c",
+			"name": "Configuration",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				240,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"documentId": {
+					"__rl": true,
+					"mode": "url",
+					"value": "={{ $('Configuration').first().json.spreadsheetUrl }}"
+				},
+				"sheetName": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.sheetName }}"
+				},
+				"options": {}
+			},
+			"id": "3efc1e11-176f-5272-921f-f2f75effdd9c",
+			"name": "Read Product Rows",
+			"type": "n8n-nodes-base.googleSheets",
+			"typeVersion": 4.5,
+			"position": [
+				480,
+				0
+			],
+			"credentials": {
+				"googleSheetsOAuth2Api": {
+					"name": "Google Sheets account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"jsCode": "// Checks each sheet row and normalizes the values for Shopware.\nconst config = $('Configuration').first().json;\nconst toNumber = (value) => Number(String(value ?? '').replace(',', '.').trim());\n\nreturn $input.all().map((item) => {\n  const row = item.json;\n  const product = {\n    row_number: row.row_number,\n    productNumber: String(row.product_number ?? '').trim(),\n    name: String(row.name ?? '').trim(),\n    price: toNumber(row.price),\n    stock: Math.trunc(toNumber(row.stock || 0)),\n    taxRate: String(row.tax_rate || config.defaultTaxRate).trim(),\n    manufacturer: String(row.manufacturer ?? '').trim(),\n    category: String(row.category ?? '').trim(),\n    description: String(row.description ?? ''),\n    active: !['no', 'false', '0'].includes(String(row.active ?? 'yes').trim().toLowerCase()),\n  };\n  const problems = [];\n  if (!product.productNumber) problems.push('product_number is empty');\n  if (!product.name) problems.push('name is empty');\n  if (!(product.price > 0)) problems.push('price must be a number above 0');\n  if (!Number.isFinite(product.stock) || product.stock < 0) problems.push('stock must be 0 or more');\n  return { json: { ...product, valid: problems.length === 0, problem: problems.join('; ') } };\n});\n"
+			},
+			"id": "ffdfe841-924b-5cd3-9d10-8537bfc5135e",
+			"name": "Validate Rows",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [
+				780,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "34a09e40-a346-5478-8c64-1f18afe9bcac",
+							"leftValue": "={{ $json.valid }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"looseTypeValidation": true,
+				"options": {}
+			},
+			"id": "94cdadaf-b398-5b36-bae5-acb242a45f12",
+			"name": "Is Row Valid?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [
+				1000,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"resource": "product",
+				"operation": "upsert",
+				"productNumber": "={{ $json.productNumber }}",
+				"name": "={{ $json.name }}",
+				"tax": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $json.taxRate }}"
+				},
+				"grossPrice": "={{ $json.price }}",
+				"stock": "={{ $json.stock }}",
+				"additionalFields": {
+					"active": "={{ $json.active }}",
+					"description": "={{ $json.description }}",
+					"manufacturer": {
+						"__rl": true,
+						"mode": "name",
+						"value": "={{ $json.manufacturer }}"
+					},
+					"categories": {
+						"items": [
+							{
+								"value": {
+									"__rl": true,
+									"mode": "name",
+									"value": "={{ $json.category }}"
+								}
+							}
+						]
+					},
+					"salesChannels": {
+						"items": [
+							{
+								"value": {
+									"__rl": true,
+									"mode": "name",
+									"value": "={{ $('Configuration').first().json.salesChannel }}"
+								}
+							}
+						]
+					}
+				}
+			},
+			"id": "8cadae22-c67f-5ffa-a2c2-f15504b0e905",
+			"name": "Create or Update Product",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				1300,
+				-100
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"onError": "continueErrorOutput"
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "da24fabc-1a41-5179-b37e-bae84d824dc0",
+							"name": "row_number",
+							"value": "={{ $('Is Row Valid?').item.json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "0e7b3c2e-f85b-5167-b9ab-8198db8d9353",
+							"name": "status",
+							"value": "imported",
+							"type": "string"
+						},
+						{
+							"id": "15d60634-0c9c-5763-80ed-00e92b8b52d2",
+							"name": "message",
+							"value": "={{ $now.toISO() }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "8369f084-2c4d-5151-a483-f8affa560d02",
+			"name": "Mark as Imported",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				1580,
+				-240
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "d1e66d34-ff0e-5fee-9567-c99998bf4930",
+							"name": "row_number",
+							"value": "={{ $('Is Row Valid?').item.json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "8c28aae8-2930-5e35-b57f-3d28bdb0895a",
+							"name": "status",
+							"value": "error",
+							"type": "string"
+						},
+						{
+							"id": "d2b2c5c1-7e46-50fc-b1d3-d67f94ef3833",
+							"name": "message",
+							"value": "={{ $json.error }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "8d3b62e6-6adf-5f55-9f51-3c88534a9c15",
+			"name": "Mark Import Error",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				1580,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "833a43de-fad6-5b0a-83a7-8f491db3e118",
+							"name": "row_number",
+							"value": "={{ $json.row_number }}",
+							"type": "number"
+						},
+						{
+							"id": "c3f8135f-51bf-5cb9-a3e8-24b6362a52b4",
+							"name": "status",
+							"value": "invalid",
+							"type": "string"
+						},
+						{
+							"id": "6ccbd5bd-ddaa-59aa-86de-5ff41059fd46",
+							"name": "message",
+							"value": "={{ $json.problem }}",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "f0e186c3-96a8-510a-994d-f708164a4c75",
+			"name": "Mark Invalid Row",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				1580,
+				220
+			]
+		},
+		{
+			"parameters": {
+				"operation": "update",
+				"documentId": {
+					"__rl": true,
+					"mode": "url",
+					"value": "={{ $('Configuration').first().json.spreadsheetUrl }}"
+				},
+				"sheetName": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.sheetName }}"
+				},
+				"columns": {
+					"mappingMode": "autoMapInputData",
+					"value": {},
+					"matchingColumns": [
+						"row_number"
+					],
+					"schema": []
+				},
+				"options": {}
+			},
+			"id": "d35fea0f-88cb-59de-9cd8-264932876877",
+			"name": "Write Status to Sheet",
+			"type": "n8n-nodes-base.googleSheets",
+			"typeVersion": 4.5,
+			"position": [
+				1840,
+				0
+			],
+			"credentials": {
+				"googleSheetsOAuth2Api": {
+					"name": "Google Sheets account"
+				}
+			}
+		}
+	],
+	"connections": {
+		"Every Morning": {
+			"main": [
+				[
+					{
+						"node": "Configuration",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Configuration": {
+			"main": [
+				[
+					{
+						"node": "Read Product Rows",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Read Product Rows": {
+			"main": [
+				[
+					{
+						"node": "Validate Rows",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Validate Rows": {
+			"main": [
+				[
+					{
+						"node": "Is Row Valid?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Is Row Valid?": {
+			"main": [
+				[
+					{
+						"node": "Create or Update Product",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Mark Invalid Row",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create or Update Product": {
+			"main": [
+				[
+					{
+						"node": "Mark as Imported",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Mark Import Error",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark as Imported": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark Import Error": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Mark Invalid Row": {
+			"main": [
+				[
+					{
+						"node": "Write Status to Sheet",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

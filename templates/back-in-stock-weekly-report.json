@@ -1,0 +1,398 @@
+{
+	"name": "Weekly Back in Stock demand and revenue report for Shopware",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Weekly Back in Stock demand and revenue report for Shopware\n\n### How it works\nEvery Monday the workflow collects the data of the **Novastrix Back in Stock** plugin: how many customers wait for which out-of-stock products, how much revenue the notifications have brought back, and which notifications failed. It emails a short HTML report so purchasing knows what to reorder first. Optionally it retries the failed notifications, so customers whose email bounced temporarily still hear about the restock.\n\n### Setup\n1. Self-hosted n8n only for now: install the community node **n8n-nodes-novastrix-shopware** (tested with 0.2.0, n8n 2.48 and 3.x, Shopware 6.7) via **Settings > Community nodes**. [Installation guide](https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#installation)\n2. In Shopware, create an integration under **Settings > System > Integrations** (access to the Back in Stock plugin) and add its access key ID and secret as a **Shopware Admin API** credential.\n3. Install the [Novastrix Back in Stock](https://novastrix.com/shopware) plugin in Shopware.\n4. Connect a **Gmail** credential.\n5. In **Configuration**, set the report recipient, how many products to list and whether failed notifications are retried. Run the workflow once and check the email.\n\n### Customization\nChange the schedule, send the report to Slack instead of email, or add the stock of each product with a Shopware **Get Many Products** node.\n",
+				"height": 660,
+				"width": 560
+			},
+			"id": "1e0a43cd-d304-55e3-b525-b064369ed374",
+			"name": "Overview",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-700,
+				-380
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Collect the plugin data\nDemand per product, recovered revenue and failed notifications.\n",
+				"height": 340,
+				"width": 780,
+				"color": 7
+			},
+			"id": "b64888d4-195c-5207-801f-527aff2b9c77",
+			"name": "Section Collect",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				460,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Retry failed notifications\nOnly when enabled in Configuration.\n",
+				"height": 360,
+				"width": 520,
+				"color": 7
+			},
+			"id": "4c10cd84-c498-50d6-8e3b-14084432c2ea",
+			"name": "Section Retry",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1260,
+				140
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Send the report\nOne HTML email per week.\n",
+				"height": 280,
+				"width": 500,
+				"color": 7
+			},
+			"id": "b40bec67-bf74-5c7b-b504-57a8e641db0e",
+			"name": "Section Report",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1260,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Emails customers\nEach retry sends it again.\n",
+				"height": 260,
+				"width": 240,
+				"color": 3
+			},
+			"id": "50ed7279-6f45-5c65-9d66-e172f8db40d0",
+			"name": "Warning Retry",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1520,
+				220
+			]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "weeks",
+							"triggerAtDay": [
+								1
+							],
+							"triggerAtHour": 8
+						}
+					]
+				}
+			},
+			"id": "4d44fab3-2480-5e48-b52f-42cc085f7353",
+			"name": "Every Monday Morning",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [
+				0,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "08fc8d51-953e-5871-bbdd-f9cdf673de5a",
+							"name": "reportRecipient",
+							"value": "YOUR_EMAIL_ADDRESS",
+							"type": "string"
+						},
+						{
+							"id": "7938b936-5b99-55c4-b344-939edf35c68c",
+							"name": "topProducts",
+							"value": 10,
+							"type": "number"
+						},
+						{
+							"id": "86684c9b-f36f-5830-8f9f-db2bae6d9dfa",
+							"name": "retryFailedNotifications",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "5948e9b7-a5ed-55cb-998c-bf6e425cdc4c",
+			"name": "Configuration",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				240,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"resource": "backInStock",
+				"operation": "getDemand"
+			},
+			"id": "3da570fb-7909-59ea-b5a4-d415835c80bd",
+			"name": "Get Waiting Demand",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				520,
+				0
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"alwaysOutputData": true
+		},
+		{
+			"parameters": {
+				"resource": "backInStock",
+				"operation": "getRevenue"
+			},
+			"id": "f8312a1c-c370-534b-950c-e96d19820362",
+			"name": "Get Recovered Revenue",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				780,
+				0
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"executeOnce": true
+		},
+		{
+			"parameters": {
+				"resource": "backInStock",
+				"operation": "getFailed"
+			},
+			"id": "2e479d9f-054e-5bd3-828e-2b3d0a92a270",
+			"name": "Get Failed Notifications",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				1040,
+				0
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"executeOnce": true,
+			"alwaysOutputData": true
+		},
+		{
+			"parameters": {
+				"jsCode": "// Builds one HTML email from demand, revenue and failed notifications.\nconst config = $('Configuration').first().json;\nconst escape = (value) => String(value ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' })[c]);\n\nconst demand = $('Get Waiting Demand').all()\n  .map((item) => item.json)\n  .filter((row) => row.variant_number)\n  .sort((a, b) => b.waiting - a.waiting);\nconst revenue = $('Get Recovered Revenue').first().json;\nconst failed = $('Get Failed Notifications').all().map((item) => item.json).filter((row) => row.subscriptionId);\n\nconst waitingTotal = demand.reduce((sum, row) => sum + row.waiting, 0);\nconst topRows = demand.slice(0, Number(config.topProducts) || 10)\n  .map((row) => `<tr><td>${escape(row.variant_number)}</td><td>${escape(row.options_label)}</td><td align=\"right\">${row.waiting}</td></tr>`)\n  .join('');\nconst revenueRows = (revenue.currencies ?? [])\n  .map((row) => `<li>${row.revenue.toFixed(2)} ${escape(row.iso)} from ${row.orders} orders</li>`)\n  .join('') || '<li>No recovered orders yet</li>';\n\nconst html = `\n<h2>Back in Stock weekly report</h2>\n<p><b>${waitingTotal}</b> customers are waiting for <b>${demand.length}</b> products.</p>\n<h3>Most requested products</h3>\n${topRows ? `<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\"><tr><th>Product number</th><th>Variant</th><th>Waiting</th></tr>${topRows}</table>` : '<p>Nobody is waiting.</p>'}\n<h3>Recovered revenue (all time)</h3>\n<ul>${revenueRows}</ul>\n<h3>Failed notifications</h3>\n<p>${failed.length} failed${failed.length && config.retryFailedNotifications ? ', retried by this workflow' : ''}.</p>`;\n\nreturn [{ json: { subject: `Back in Stock: ${waitingTotal} customers waiting`, html, waitingTotal, failed: failed.length } }];\n"
+			},
+			"id": "dfeb9ddd-60c6-5280-9c69-a8ea6b0d19e8",
+			"name": "Build Report",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [
+				1320,
+				-200
+			]
+		},
+		{
+			"parameters": {
+				"sendTo": "={{ $('Configuration').first().json.reportRecipient }}",
+				"subject": "={{ $json.subject }}",
+				"message": "={{ $json.html }}",
+				"options": {
+					"appendAttribution": false
+				}
+			},
+			"id": "22b8b32c-a017-5616-8d3b-1de0b7df8431",
+			"name": "Email Report",
+			"type": "n8n-nodes-base.gmail",
+			"typeVersion": 2.1,
+			"position": [
+				1560,
+				-200
+			],
+			"credentials": {
+				"gmailOAuth2": {
+					"name": "Gmail account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "22786891-7c4d-5917-8e46-43b11178bddd",
+							"leftValue": "={{ $('Configuration').first().json.retryFailedNotifications }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						},
+						{
+							"id": "1c38d4e7-cb49-52f2-a19c-ef4c75c6fb97",
+							"leftValue": "={{ $json.subscriptionId }}",
+							"rightValue": "",
+							"operator": {
+								"type": "string",
+								"operation": "notEmpty",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"looseTypeValidation": true,
+				"options": {}
+			},
+			"id": "06f05237-7245-5d81-aa26-273de068aaa1",
+			"name": "Should Retry?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [
+				1320,
+				280
+			]
+		},
+		{
+			"parameters": {
+				"resource": "backInStock",
+				"operation": "retryFailed",
+				"subscriptionId": "={{ $json.subscriptionId }}",
+				"retryFields": {
+					"logId": "={{ $json.logId ?? '' }}",
+					"messengerId": "={{ $json.messengerId ?? 0 }}"
+				}
+			},
+			"id": "76090566-f6f2-5a00-a884-dd8124c28225",
+			"name": "Retry Failed Notification",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				1580,
+				280
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"onError": "continueRegularOutput"
+		}
+	],
+	"connections": {
+		"Every Monday Morning": {
+			"main": [
+				[
+					{
+						"node": "Configuration",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Configuration": {
+			"main": [
+				[
+					{
+						"node": "Get Waiting Demand",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Waiting Demand": {
+			"main": [
+				[
+					{
+						"node": "Get Recovered Revenue",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Recovered Revenue": {
+			"main": [
+				[
+					{
+						"node": "Get Failed Notifications",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get Failed Notifications": {
+			"main": [
+				[
+					{
+						"node": "Build Report",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "Should Retry?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Build Report": {
+			"main": [
+				[
+					{
+						"node": "Email Report",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Should Retry?": {
+			"main": [
+				[
+					{
+						"node": "Retry Failed Notification",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

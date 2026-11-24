@@ -1,0 +1,350 @@
+{
+	"name": "Create and send Shopware invoices when an order is paid",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Create and send Shopware invoices when an order is paid\n\n### How it works\nWhen a payment in Shopware changes to **paid**, the Shopware Trigger starts the workflow. It creates the invoice PDF for the order in Shopware, emails it to the customer and posts a short summary to Slack. If the order already has an invoice, for example when the payment is marked paid twice, the workflow reuses it and sends nothing again. If Shopware cannot create the invoice, the team gets a Slack alert to handle the order by hand.\n\n### Setup\n1. Self-hosted n8n only for now: install the community node **n8n-nodes-novastrix-shopware** (tested with 0.2.0, n8n 2.48 and 3.x, Shopware 6.7) via **Settings > Community nodes**. [Installation guide](https://github.com/Breadchicken/n8n-nodes-novastrix-shopware#installation)\n2. In Shopware, create an integration under **Settings > System > Integrations** (read and write access to orders and documents) and add its access key ID and secret as a **Shopware Admin API** credential.\n3. Connect a **Gmail** and a **Slack** credential.\n4. In **Configuration**, set the Slack channel and the comment printed on the invoice.\n5. Shopware must reach n8n over a public HTTPS URL. Activate the workflow, mark a test order as paid and check the invoice in Shopware, the email and the Slack message.\n\n### Customization\nRemove **Email Invoice to Customer** if a Shopware flow already sends invoices. Change the document type in **Create Invoice** to a ZUGFeRD invoice for e-invoicing.\n",
+				"height": 700,
+				"width": 560
+			},
+			"id": "1e0a43cd-d304-55e3-b525-b064369ed374",
+			"name": "Overview",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-700,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Start on payment\nRuns once per payment that changes to paid.\n",
+				"height": 340,
+				"width": 500,
+				"color": 7
+			},
+			"id": "2cf5e3ca-2368-5497-8079-ec8eb28395cb",
+			"name": "Section Trigger",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-60,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Create the invoice\nReuses an existing invoice, so repeated events send nothing twice.\n",
+				"height": 340,
+				"width": 500,
+				"color": 7
+			},
+			"id": "8dae5c87-b6f5-574e-b8b2-5816c927e943",
+			"name": "Section Invoice",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				460,
+				-160
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Send and notify\nEmail to the customer, summary or alert to the team.\n",
+				"height": 760,
+				"width": 520,
+				"color": 7
+			},
+			"id": "380c0c08-3f85-5555-95a8-4d98564357d3",
+			"name": "Section Notify",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				980,
+				-360
+			]
+		},
+		{
+			"parameters": {
+				"content": "## Emails real customers\nTest with your own order first.\n",
+				"height": 260,
+				"width": 300,
+				"color": 3
+			},
+			"id": "fe9a40f3-f271-5caa-a6fa-f5d8ee00ea6c",
+			"name": "Warning Email",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				1060,
+				-260
+			]
+		},
+		{
+			"parameters": {
+				"events": [
+					"state_enter.order_transaction.state.paid"
+				],
+				"simplify": true,
+				"options": {}
+			},
+			"id": "5bb3505f-b041-55c0-99fb-8fae54e16cf4",
+			"name": "When Payment Is Marked Paid",
+			"type": "n8n-nodes-novastrix-shopware.shopwareTrigger",
+			"typeVersion": 1,
+			"position": [
+				0,
+				0
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"assignments": {
+					"assignments": [
+						{
+							"id": "bb330784-1a86-5afb-842c-20f59ed99575",
+							"name": "slackChannel",
+							"value": "YOUR_SLACK_CHANNEL",
+							"type": "string"
+						},
+						{
+							"id": "2f225904-dec2-542d-b4e6-98688e186d75",
+							"name": "invoiceComment",
+							"value": "Thank you for your order.",
+							"type": "string"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "5948e9b7-a5ed-55cb-998c-bf6e425cdc4c",
+			"name": "Configuration",
+			"type": "n8n-nodes-base.set",
+			"typeVersion": 3.4,
+			"position": [
+				240,
+				0
+			]
+		},
+		{
+			"parameters": {
+				"resource": "order",
+				"operation": "createDocument",
+				"order": {
+					"__rl": true,
+					"mode": "id",
+					"value": "={{ $('When Payment Is Marked Paid').item.json.order.id }}"
+				},
+				"documentType": "invoice",
+				"ifExists": "useExisting",
+				"documentFields": {
+					"documentComment": "={{ $json.invoiceComment }}"
+				},
+				"download": true,
+				"binaryPropertyName": "data"
+			},
+			"id": "f003355c-3fa1-5bd2-b20e-ae1f0e4fbc9a",
+			"name": "Create Invoice",
+			"type": "n8n-nodes-novastrix-shopware.shopware",
+			"typeVersion": 1,
+			"position": [
+				520,
+				0
+			],
+			"credentials": {
+				"shopwareAdminApi": {
+					"name": "Shopware account"
+				}
+			},
+			"onError": "continueErrorOutput"
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "loose",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "388d6c8b-74c9-59f5-9a32-113d8ba603f0",
+							"leftValue": "={{ $json.created }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"looseTypeValidation": true,
+				"options": {}
+			},
+			"id": "4daccb0c-9a5e-5540-9e3b-0586ea6ebe39",
+			"name": "Is New Invoice?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [
+				760,
+				-60
+			]
+		},
+		{
+			"parameters": {
+				"sendTo": "={{ $('When Payment Is Marked Paid').item.json.order.customer.email }}",
+				"subject": "=Your invoice {{ $json.documentNumber }} for order {{ $json.orderNumber }}",
+				"emailType": "text",
+				"message": "=Hello {{ $('When Payment Is Marked Paid').item.json.order.customer.firstName }},\n\nthank you for your payment. Your invoice {{ $json.documentNumber }} for order {{ $json.orderNumber }} is attached.\n\nKind regards",
+				"options": {
+					"appendAttribution": false,
+					"attachmentsUi": {
+						"attachmentsBinary": [
+							{
+								"property": "data"
+							}
+						]
+					}
+				}
+			},
+			"id": "c22fdb69-3e05-54af-bae6-ff98c2025bad",
+			"name": "Email Invoice to Customer",
+			"type": "n8n-nodes-base.gmail",
+			"typeVersion": 2.1,
+			"position": [
+				1140,
+				-200
+			],
+			"credentials": {
+				"gmailOAuth2": {
+					"name": "Gmail account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"select": "channel",
+				"channelId": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.slackChannel }}"
+				},
+				"text": "=Order {{ $json.orderNumber }} is paid: {{ $('When Payment Is Marked Paid').item.json.order.amountTotal }} {{ $('When Payment Is Marked Paid').item.json.order.currency }} from {{ $('When Payment Is Marked Paid').item.json.order.customer.firstName }} {{ $('When Payment Is Marked Paid').item.json.order.customer.lastName }}. Invoice {{ $json.documentNumber }} was sent.",
+				"otherOptions": {
+					"includeLinkToWorkflow": false
+				}
+			},
+			"id": "10f01aa2-87f2-5657-8d14-e83d5e4ba3e2",
+			"name": "Notify Team",
+			"type": "n8n-nodes-base.slack",
+			"typeVersion": 2.3,
+			"position": [
+				1140,
+				80
+			],
+			"credentials": {
+				"slackApi": {
+					"name": "Slack account"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"select": "channel",
+				"channelId": {
+					"__rl": true,
+					"mode": "name",
+					"value": "={{ $('Configuration').first().json.slackChannel }}"
+				},
+				"text": "=Invoice for order {{ $('When Payment Is Marked Paid').item.json.order.orderNumber }} failed: {{ $json.error }}. Please create it in the Shopware Administration.",
+				"otherOptions": {
+					"includeLinkToWorkflow": true
+				}
+			},
+			"id": "96ae4f38-6cab-5018-8bb7-61666304a0f4",
+			"name": "Report Failed Invoice",
+			"type": "n8n-nodes-base.slack",
+			"typeVersion": 2.3,
+			"position": [
+				760,
+				200
+			],
+			"credentials": {
+				"slackApi": {
+					"name": "Slack account"
+				}
+			}
+		}
+	],
+	"connections": {
+		"When Payment Is Marked Paid": {
+			"main": [
+				[
+					{
+						"node": "Configuration",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Configuration": {
+			"main": [
+				[
+					{
+						"node": "Create Invoice",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Create Invoice": {
+			"main": [
+				[
+					{
+						"node": "Is New Invoice?",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Report Failed Invoice",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Is New Invoice?": {
+			"main": [
+				[
+					{
+						"node": "Email Invoice to Customer",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "Notify Team",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"pinData": {},
+	"tags": []
+}

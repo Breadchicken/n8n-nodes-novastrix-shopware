@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Four workflow templates in `templates/` for the n8n template library: invoices for paid orders, product import from Google Sheets, a weekly Back in Stock report and Lexikon maintenance from Google Sheets.
+
 ## [0.2.0] - 2026-11-24
 
 ### Added

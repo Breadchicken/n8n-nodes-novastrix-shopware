@@ -2,6 +2,8 @@
 
 An [n8n](https://n8n.io/) community node for the [Shopware 6](https://www.shopware.com/) Admin API.
 
+![A workflow that reacts to new Shopware orders: set the status, create the invoice, add a tracking code](docs/images/workflow.png)
+
 > **Status: 0.x.** Products, orders and the Shopware Trigger are ready; more resources are being added, and details may still change before 1.0. See the [changelog](CHANGELOG.md).
 
 Highlights:
@@ -14,11 +16,13 @@ Highlights:
 
 Planned: customers, categories and media, bulk writes through Shopware's sync API, and a free criteria search with aggregations.
 
-[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Trigger](#trigger) · [Compatibility](#compatibility) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
+[Installation](#installation) · [Credentials](#credentials) · [Operations](#operations) · [Trigger](#trigger) · [Compatibility](#compatibility) · [Templates](#templates) · [Quickstart](#quickstart) · [Development](#development) · [Resources](#resources)
 
 ## Installation
 
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation and install the package `n8n-nodes-novastrix-shopware`. In the nodes panel it appears as **Shopware Novastrix** (actions and trigger in one entry), which tells it apart from other Shopware nodes.
+
+<img src="docs/images/nodes-panel.gif" width="320" alt="Searching for Shopware in the nodes panel and browsing the actions of Shopware Novastrix">
 
 ## Credentials
 
@@ -55,6 +59,12 @@ Every field that references another Shopware record offers three modes:
 - **From List**: a searchable dropdown that pages through all records.
 - **By Name** (or number, ISO code, ...): the value is resolved when the workflow runs. Great for expressions like `{{ $json.manufacturer }}`.
 - **By ID**: the raw Shopware ID.
+
+![Create or Update Product with tax rate, category path, delivery time, manufacturer and sales channel given by name; the output shows the resolved IDs](docs/images/names-instead-of-ids.png)
+
+Picking a record from the list searches the whole catalog, page by page:
+
+![Picking a product from the searchable list and running Get Product](docs/images/resource-locator.gif)
 
 | Record | Accepted values |
 |---|---|
@@ -108,6 +118,8 @@ Plugin data appears under **Novastrix Plugin Fields** in Product Create, Create 
 
 **Shopware Novastrix Trigger** starts a workflow when something happens in the shop. Pick one or more events:
 
+<img src="docs/images/trigger-events.png" width="460" alt="Event list of the Shopware Novastrix Trigger, filtered by order">
+
 - **Business events from your shop**, including plugin events: *Order Placed*, *Customer Registered*, *Newsletter Registered*, *Contact Form Sent*, ...
 - **Status changes**: *Payment Status Changed to Paid*, *Delivery Status Changed to Shipped*, *Order Status Changed to Cancelled*, and the matching "Changed From" events.
 - **Record changes**: *Product Created or Updated*, *Order Deleted*, ... for category, customer, customer address, document, media, order, order address, product, product price, sales channel and sales channel domain.
@@ -145,6 +157,19 @@ Shopware must be able to reach n8n:
 
 - Shopware 6.6 and 6.7 (tested against 6.7.16)
 - n8n 1.x, 2.x and 3.x with community node support (`n8nNodesApiVersion` 1; tested on 2.48 and 3.3)
+
+## Templates
+
+Ready-to-use workflows for real shop tasks are in [`templates`](templates). Each one explains its setup in a note on the canvas. Import the JSON file under **Workflows > Import from File**.
+
+| Template | What it does |
+|---|---|
+| [Create and send invoices when an order is paid](templates/paid-order-invoice.json) | Shopware Trigger on "paid": creates the invoice PDF once, emails it to the customer and notifies Slack; failures go to Slack |
+| [Import products from Google Sheets](templates/product-import-google-sheets.json) | Creates or updates products by product number, with tax, manufacturer and category by name; writes the result of each row back to the sheet |
+| [Weekly Back in Stock report](templates/back-in-stock-weekly-report.json) | Emails demand per product and recovered revenue, optionally retries failed notifications (Novastrix Back in Stock plugin) |
+| [Maintain the Lexikon from Google Sheets](templates/lexikon-from-google-sheets.json) | Creates missing categories and creates or updates glossary entries by term (Novastrix Lexikon plugin) |
+
+The workflows in [`examples/workflows`](examples/workflows) are short demos of single operations, used by the quickstart.
 
 ## Quickstart
 
