@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-24
+
 ### Changed
 
 - The nodes are now called **Shopware Novastrix** and **Shopware Novastrix Trigger**, so they can be told apart from other Shopware nodes in the nodes panel. Node types are unchanged; existing workflows keep working.
@@ -41,5 +43,6 @@ First release.
 - Back in Stock resource (Novastrix Back in Stock): list and get subscriptions, unsubscribe by ID or email, resend notifications, list and retry failed notifications, demand per variant, recovered revenue.
 - Error messages of Novastrix plugin routes (`{ success: false, message, errors[] }`) are shown in full.
 
-[Unreleased]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/Breadchicken/n8n-nodes-novastrix-shopware/releases/tag/0.1.0
