@@ -18,6 +18,7 @@ import {
 	parseJsonParameter,
 	splitList,
 } from '../../shared/utils';
+import { applyGuarantee } from './guarantee';
 import type { PluginWrite } from './plugins';
 import { buildPluginWrite, PLUGINS } from './plugins';
 
@@ -374,6 +375,7 @@ async function buildPayload(
 	}
 
 	await applyPrices.call(this, state, data, payload, existing);
+	await applyGuarantee(this.getNode(), state, data, payload);
 
 	const categoryIds = await resolveList(state, 'category', data.categories);
 	if (categoryIds.length > 0) {

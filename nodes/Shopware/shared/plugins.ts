@@ -17,10 +17,6 @@ export const PLUGINS = {
 		name: 'Novastrix Deficiency Description',
 		technicalName: 'NovastrixMaengelbeschreibung',
 	},
-	euWarranty: {
-		name: 'Novastrix EU Warranty Label',
-		technicalName: 'NovastrixEUGewaehrleistungslabel',
-	},
 	seo: { name: 'Novastrix SEO', technicalName: 'NovastrixSEO' },
 	supplier: { name: 'Novastrix Supplier Management', technicalName: 'NovastrixSupplier' },
 	dashboard: { name: 'Novastrix Product Dashboard', technicalName: 'NovastrixProductDashboard' },
@@ -28,6 +24,7 @@ export const PLUGINS = {
 		name: 'Novastrix Product Configurator',
 		technicalName: 'NovastrixConfigurator',
 	},
+	lexikon: { name: 'Novastrix Lexikon', technicalName: 'NovastrixLexikon' },
 } as const satisfies Record<string, NovastrixPlugin>;
 
 export type PluginState = 'active' | 'inactive' | 'missing';

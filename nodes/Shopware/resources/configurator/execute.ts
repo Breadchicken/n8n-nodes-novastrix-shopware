@@ -3,7 +3,7 @@ import { NodeOperationError } from 'n8n-workflow';
 
 import type { ExecutionState } from '../../shared/state';
 import { shopwareApiRequest, shopwareSearch, shopwareSearchPage } from '../../shared/transport';
-import { generateId, parseJsonParameter, splitList } from '../../shared/utils';
+import { generateId, parseJsonParameter, pick, splitList } from '../../shared/utils';
 import { PLUGINS } from '../product/plugins';
 
 const ENTITY = 'novastrix_configurator';
@@ -287,14 +287,4 @@ async function readSteps(
 		steps.push(step);
 	}
 	return steps;
-}
-
-function pick(source: IDataObject, keys: string[]): IDataObject {
-	const result: IDataObject = {};
-	for (const key of keys) {
-		if (source[key] !== undefined && source[key] !== '') {
-			result[key] = source[key];
-		}
-	}
-	return result;
 }

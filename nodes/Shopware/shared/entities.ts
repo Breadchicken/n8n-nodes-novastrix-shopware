@@ -58,6 +58,22 @@ const translatedName = (record: IDataObject): string => {
 	return String(translated?.name ?? record.name ?? record.id);
 };
 
+/** "photo.jpg" matches file name and extension, "photo" the file name only. */
+const mediaFileName = (value: string): DalFilter => {
+	const dot = value.lastIndexOf('.');
+	if (dot <= 0) {
+		return { type: 'equals', field: 'fileName', value };
+	}
+	return {
+		type: 'multi',
+		operator: 'and',
+		queries: [
+			{ type: 'equals', field: 'fileName', value: value.slice(0, dot) },
+			{ type: 'equals', field: 'fileExtension', value: value.slice(dot + 1) },
+		],
+	};
+};
+
 const withSuffix = (name: string, suffix: unknown): string =>
 	suffix ? `${name} (${String(suffix)})` : name;
 
@@ -293,6 +309,20 @@ export const ENTITIES = {
 		'e.g. Sale items',
 	),
 
+	media: {
+		entity: 'media',
+		label: 'media file',
+		displayFields: ['fileName', 'fileExtension', 'title'],
+		display: (r: IDataObject) =>
+			r.fileName ? `${String(r.fileName)}.${String(r.fileExtension ?? '')}` : String(r.id),
+		lookups: [mediaFileName, equals('title')],
+		searchFields: ['fileName', 'title', 'alt'],
+		sortField: 'fileName',
+		// No admin link: the media module routes by folder, not by file.
+		namePlaceholder: 'e.g. polyester-fabric.jpg',
+		nameModeLabel: 'By File Name',
+	},
+
 	/* ------------------------------ Novastrix plugins ----------------------------- */
 	supplier: {
 		entity: 'pflaum_supplier',
@@ -316,6 +346,33 @@ export const ENTITIES = {
 		sortField: 'name',
 		plugin: PLUGINS.configurator,
 		namePlaceholder: 'e.g. PC Bundle',
+	},
+	lexikonEntry: {
+		entity: 'novastrix_lexikon_entry',
+		label: 'lexikon entry',
+		displayFields: ['term', 'active'],
+		display: (r: IDataObject) =>
+			String((r.translated as IDataObject | undefined)?.term ?? r.term ?? r.id),
+		// Terms are not unique in the plugin; the resolver reports duplicates as ambiguous.
+		lookups: [equals('term')],
+		searchFields: ['term'],
+		sortField: 'term',
+		adminPath: 'novastrix/lexikon/detail/{id}',
+		plugin: PLUGINS.lexikon,
+		namePlaceholder: 'e.g. Polyester',
+		nameModeLabel: 'By Term',
+	},
+	lexikonCategory: {
+		entity: 'novastrix_lexikon_category',
+		label: 'lexikon category',
+		displayFields: ['name', 'position'],
+		display: translatedName,
+		lookups: [equals('name')],
+		searchFields: ['name'],
+		sortField: 'position',
+		adminPath: 'novastrix/lexikon/category/detail/{id}',
+		plugin: PLUGINS.lexikon,
+		namePlaceholder: 'e.g. Materials',
 	},
 } satisfies Record<string, EntityConfig>;
 

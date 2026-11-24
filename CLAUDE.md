@@ -103,24 +103,26 @@ Conventions:
 
 ## Novastrix plugin support
 
-The node must fully support the author's own Shopware plugins (source: `~/Documents/GitHub/shopware-plugins/shopware6-extension`). Rules:
+The node supports a chosen set of the author's own Shopware plugins (source: `~/Documents/GitHub/shopware-plugins/shopware6-extension`). **Add a plugin only when Philipp names it explicitly**; do not add others on your own (decided 2026-11-24, when the EU Warranty Label plugin was removed because Shopware 6.7.14+ has the guarantee fields natively). Rules:
 
 - Plugin product data lives in `resources/product/plugins.ts` (collection **Novastrix Plugin Fields**), plugin entities get their own resource (e.g. `resources/configurator`). Display names are prefixed with the plugin topic ("Deficiency: ...", "SEO: ...") so they group in the alphabetic list.
 - Plugins are registered in `shared/plugins.ts` (`PLUGINS`: display name + technical name; `PLUGIN_INFO_URL` = https://novastrix.com/shopware).
 - **Check before use:** call `await state.requirePlugin(PLUGINS.x, i)` before any plugin operation or plugin field write (product fields map to plugins via `FIELD_PLUGINS` in `resources/product/plugins.ts`). Reason: Shopware silently stores custom fields of missing plugins, so without the check the data would land without effect. The check reads `plugin` once per run; on 403 (integration without plugin permission) it is skipped.
 - Every request to a plugin route or entity also passes `requiresPlugin`: a 404 then becomes "needs plugin X" (with the link) instead of "Not Found".
 - Plugin resources start with `pluginNotice(...)` (UI hint with the link).
-- Validate plugin rules before sending (e.g. EU guarantee months), so users get a precise message.
-- Prefer native Shopware fields when the shop has them (`state.hasField(entity, field)`), e.g. `guaranteeMonths` on 6.7.14+.
+- Validate plugin rules before sending, so users get a precise message (the same applies to native fields, e.g. guarantee months in `resources/product/guarantee.ts`).
+- Prefer native Shopware fields when the shop has them (`state.hasField(entity, field)`), e.g. `guaranteeMonths` on 6.7.14+ (product fields *Guarantee (Months)* / *Guarantee Confirmed*; older shops get an error instead of a plugin fallback).
 - Use the plugin's own upsert routes where they exist (Supplier: `import-product-suppliers`, `product-strategy`); they match by natural keys and avoid duplicates.
 - Plugin facts worth knowing:
   - Supplier: `import-product-suppliers` maps `supplierArticleNumber` -> `supplierNumber`; `selectionStrategy: null` resets to the global default. The plugin does not validate strategy values, so the node offers only valid ones.
   - Product Dashboard: `audit/product` returns 409 `no_finished_run` until one full audit run has finished.
   - Configurator: one configurator per product and position (plugin validates, code `NOVASTRIX_CONFIGURATOR__DUPLICATE_POSITION`); `productId` is a plain string, not an association; `configuration` is one JSON column, so updates merge into the stored value.
   - Back in Stock: entity `novastrix_bis_subscription`. Creating subscriptions from n8n is intentionally not offered (it would bypass the double opt-in; consent must come from the storefront). `optInToken` and `unsubscribeToken` are stripped from every output because they act in the customer's name. Unsubscribe writes the same as the plugin's link (`status: unsubscribed`, `optInToken: null`). `resend-bulk` silently skips invalid IDs, so the node validates them first. Tokens are 64 hex chars; mails are sent through the message queue (synchronous in the dev shop, visible in Mailpit on :8025).
+  - Lexikon (`NovastrixLexikon`): no own Admin API routes, only DAL CRUD on `novastrix-lexikon-entry` / `-category` / `-entry-media` and `_action/sync`. `term` and category `name` are translated and **not unique**, so name lookups can be ambiguous (the resolver reports it; Create or Update refuses to guess). An empty sales channel list means "visible everywhere". Nested many-to-many writes only add links, so Update replaces given lists with one sync request (upsert/delete on `novastrix_lexikon_entry_sales_channel`, `_related`, `_media`), like the plugin's admin. `initialLetter`, SEO URLs and `viewCount` are maintained by the plugin. Images are existing media (entity `media`, looked up by file name); uploading is not offered.
   - Custom fields of plugins are translated: they are written in the language of the `sw-language-id` header.
 - Intentionally not supported: **Variant Creator** (still experimental; a draft resource was built and removed on 2026-11-20, see git history of commit 972193a).
-- Not covered yet (next resources): Open Carts, Search (synonyms, boosting), Lexikon, Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
+- Intentionally removed: **EU Warranty Label** (2026-11-24). Shopware 6.7.14+ ships the fields; the node writes only those.
+- Not supported unless Philipp asks explicitly (candidates only): Open Carts, Search (synonyms, boosting), Chatbot sync, Cross-Selling recompute and weights, Manufacturer safety text, Property display groups.
 
 ## Name resolution (core feature)
 
@@ -148,6 +150,9 @@ Natural keys per entity (extend this table when adding resources):
 | property_group_option | `group name: option name` |
 | salutation | `salutationKey` |
 | state_machine_state | `technicalName` |
+| media | `fileName` (with or without extension), then `title` |
+| novastrix_lexikon_entry | `term` (translated) |
+| novastrix_lexikon_category | `name` (translated) |
 
 To support a new entity: add it to `ENTITIES` in `shared/entities.ts` (lookups, display, search fields, admin path). The dropdown (`listSearch`) and the resolver pick it up automatically; in descriptions use `entityLocator()` / `entityLocatorList()`, in execute use `state.resolver.resolveLocator()`.
 

@@ -114,6 +114,23 @@ function productDataFields(): INodeProperties[] {
 			default: '',
 		},
 		{
+			displayName: 'Guarantee (Months)',
+			name: 'guaranteeMonths',
+			type: 'number',
+			typeOptions: { minValue: 30, maxValue: 600, numberStepSize: 6 },
+			default: 36,
+			description:
+				'Durability guarantee in months (EU guarantee label): 30 to 600, in half-year steps. Needs Shopware 6.7.14 or later.',
+		},
+		{
+			displayName: 'Guarantee Confirmed',
+			name: 'guaranteeConfirmed',
+			type: 'boolean',
+			default: true,
+			description:
+				'Whether the manufacturer confirmed the durability guarantee. Needs Shopware 6.7.14 or later.',
+		},
+		{
 			displayName: 'Height (Mm)',
 			name: 'height',
 			type: 'number',

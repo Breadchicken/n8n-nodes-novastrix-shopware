@@ -12,6 +12,13 @@ import { backInStockFields, backInStockOperations } from './resources/backInStoc
 import { executeBackInStock } from './resources/backInStock/execute';
 import { configuratorFields, configuratorOperations } from './resources/configurator/description';
 import { executeConfigurator } from './resources/configurator/execute';
+import {
+	lexikonCategoryFields,
+	lexikonCategoryOperations,
+} from './resources/lexikon/categoryDescription';
+import { executeLexikonCategory } from './resources/lexikon/categoryExecute';
+import { lexikonEntryFields, lexikonEntryOperations } from './resources/lexikon/entryDescription';
+import { executeLexikonEntry } from './resources/lexikon/entryExecute';
 import { loadOptions } from './loadOptions';
 import { orderFields, orderOperations } from './resources/order/description';
 import { executeOrder } from './resources/order/execute';
@@ -65,6 +72,17 @@ export class Shopware implements INodeType {
 						description: 'Product configurators of the Novastrix Product Configurator plugin',
 					},
 					{
+						name: 'Lexikon Category (Novastrix)',
+						value: 'lexikonCategory',
+						description: 'Categories of the Novastrix Lexikon (glossary) plugin',
+					},
+					{
+						name: 'Lexikon Entry (Novastrix)',
+						value: 'lexikonEntry',
+						description:
+							'Glossary terms of the Novastrix Lexikon plugin, with synonyms, images and links',
+					},
+					{
 						name: 'Order',
 						value: 'order',
 					},
@@ -83,6 +101,10 @@ export class Shopware implements INodeType {
 			...backInStockFields,
 			...configuratorOperations,
 			...configuratorFields,
+			...lexikonCategoryOperations,
+			...lexikonCategoryFields,
+			...lexikonEntryOperations,
+			...lexikonEntryFields,
 			...orderOperations,
 			...orderFields,
 			...productOperations,
@@ -114,6 +136,12 @@ export class Shopware implements INodeType {
 						break;
 					case 'configurator':
 						responseData = await executeConfigurator.call(this, state, operation, i);
+						break;
+					case 'lexikonCategory':
+						responseData = await executeLexikonCategory.call(this, state, operation, i);
+						break;
+					case 'lexikonEntry':
+						responseData = await executeLexikonEntry.call(this, state, operation, i);
 						break;
 					case 'order':
 						responseData = await executeOrder.call(this, state, operation, i);
