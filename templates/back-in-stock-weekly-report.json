@@ -18,6 +18,22 @@
 		},
 		{
 			"parameters": {
+				"content": "## Schedule and settings\nRuns every Monday at 8:00. Set the recipient and options in Configuration.\n",
+				"height": 340,
+				"width": 500,
+				"color": 7
+			},
+			"id": "771a59b3-754e-5c15-a680-9938bfd83bf4",
+			"name": "Section Schedule",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [
+				-60,
+				-160
+			]
+		},
+		{
+			"parameters": {
 				"content": "## Collect the plugin data\nDemand per product, recovered revenue and failed notifications.\n",
 				"height": 340,
 				"width": 780,
