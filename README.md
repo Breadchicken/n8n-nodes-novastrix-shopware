@@ -142,7 +142,7 @@ Shopware must be able to reach n8n:
 ## Compatibility
 
 - Shopware 6.6 and 6.7 (tested against 6.7.16)
-- n8n with community node support (`n8nNodesApiVersion` 1)
+- n8n 1.x, 2.x and 3.x with community node support (`n8nNodesApiVersion` 1; tested on 2.48 and 3.3)
 
 ## Quickstart
 

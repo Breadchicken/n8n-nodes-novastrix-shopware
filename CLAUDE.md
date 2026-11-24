@@ -224,5 +224,5 @@ How the token is handled, and why:
 ## Compatibility
 
 - Target: Shopware **6.6 and 6.7**.
-- n8n: current 1.x/2.x with `n8nNodesApiVersion: 1`.
+- n8n: 1.x, 2.x and **3.x** with `n8nNodesApiVersion: 1`. n8n 3 must stay supported: test new operations on `N8N_VERSION=v3-nightly` too (`N8N_VERSION=v3-nightly N8N_PORT=5681 docker compose -p nvs-v3 up -d`). The build compiles against the `n8n-workflow` 2 types; 0.1.1 ran unchanged on n8n 3.3.0 (examples 1-7, API errors, trigger with a real webhook).
 - Document any version-specific endpoint in the README.

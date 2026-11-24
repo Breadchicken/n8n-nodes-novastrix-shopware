@@ -17,8 +17,8 @@ updates:
         dependency-type: development
     open-pull-requests-limit: 5
     ignore:
-      # Majors of the toolchain are updated by hand: n8n-workflow follows the n8n versions the node
-      # supports (1.x/2.x), @n8n/node-cli and eslint must match n8n's verification lint, and
+      # Majors of the toolchain are updated by hand: the node supports n8n 1.x to 3.x, so the
+      # n8n-workflow types must not drift to APIs older n8n versions lack; @n8n/node-cli and eslint must match n8n's verification lint, and
       # TypeScript 7 breaks the lint run (typescript-eslint, "reading 'Intrinsic'").
       - dependency-name: n8n-workflow
         update-types: ['version-update:semver-major']
