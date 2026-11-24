@@ -1,4 +1,4 @@
-import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
+import type { IDataObject, IExecuteFunctions, INode, JsonObject } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 /** Single entry of a Shopware error response (`{ errors: [...] }`). */
@@ -141,4 +141,52 @@ export function toNodeError(
 	}
 
 	return new NodeOperationError(context.getNode(), error as Error, { itemIndex });
+}
+
+/**
+ * Builds a NodeApiError with the given message and description.
+ *
+ * `new NodeApiError(node, error, { message })` returns `error` unchanged when it already is a
+ * NodeApiError, and drops the message. Since n8n 2, `httpRequestWithAuthentication` throws
+ * NodeApiErrors itself, so the text has to be set on the existing error instead.
+ */
+export function apiError(
+	node: INode,
+	error: unknown,
+	text: { message?: string; description?: string },
+): NodeApiError {
+	if (error instanceof NodeApiError) {
+		if (text.message) {
+			error.message = text.message;
+		}
+		if (text.description) {
+			error.description = text.description;
+		}
+		return error;
+	}
+	return new NodeApiError(node, error as JsonObject, text);
+}
+
+/**
+ * Response body of a failed request. Raw request errors carry it in `response`; NodeApiErrors
+ * built by n8n keep it in `context.data` and the original error in `cause`.
+ */
+export function errorBody(error: unknown): unknown {
+	const err = error as {
+		response?: { body?: unknown; data?: unknown };
+		error?: unknown;
+		description?: unknown;
+		context?: { data?: unknown };
+		cause?: { response?: { body?: unknown; data?: unknown }; error?: unknown };
+	};
+	return (
+		err.response?.body ??
+		err.response?.data ??
+		err.context?.data ??
+		err.cause?.response?.data ??
+		err.cause?.response?.body ??
+		err.cause?.error ??
+		err.error ??
+		err.description
+	);
 }

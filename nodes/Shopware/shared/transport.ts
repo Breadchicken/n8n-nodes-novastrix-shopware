@@ -6,11 +6,10 @@ import type {
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	IWebhookFunctions,
-	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
-import { formatShopwareErrors } from './errors';
+import { apiError, errorBody, formatShopwareErrors } from './errors';
 import type { NovastrixPlugin } from './plugins';
 import { PLUGIN_INFO_URL } from './plugins';
 import { EntityResolver } from './resolver';
@@ -78,7 +77,7 @@ export async function shopwareApiRequest<T = IDataObject>(
 		)) as T;
 	} catch (error) {
 		if (options.requiresPlugin && httpStatus(error) === 404) {
-			throw new NodeApiError(this.getNode(), error as JsonObject, {
+			throw apiError(this.getNode(), error, {
 				message: `This operation needs the ${options.requiresPlugin.name} plugin`,
 				description: `Shopware answered 404 for ${method} /api${path}. Make sure the ${options.requiresPlugin.name} plugin is installed and active in the shop. Learn more about the Novastrix plugins: ${PLUGIN_INFO_URL}`,
 			});
@@ -184,24 +183,8 @@ export function httpStatus(error: unknown): number | undefined {
 }
 
 function toNodeApiError(context: ShopwareContext, error: unknown): NodeApiError {
-	if (error instanceof NodeApiError) {
-		return error;
-	}
-
-	const err = error as {
-		response?: { body?: unknown; data?: unknown };
-		error?: unknown;
-		description?: unknown;
-		httpCode?: string;
-	};
-	const body = err.response?.body ?? err.response?.data ?? err.error ?? err.description;
-	const formatted = formatShopwareErrors(body);
-
-	return new NodeApiError(
-		context.getNode(),
-		error as JsonObject,
-		formatted ? { message: formatted.message, description: formatted.description } : {},
-	);
+	const formatted = formatShopwareErrors(errorBody(error));
+	return apiError(context.getNode(), error, formatted ?? {});
 }
 
 /** DAL entity names use underscores, API routes use dashes (`product_manufacturer`). */

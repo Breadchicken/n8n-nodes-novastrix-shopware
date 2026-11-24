@@ -12,7 +12,7 @@ export const systemOperations: INodeProperties[] = [
 				name: 'Get Version',
 				value: 'getVersion',
 				description: 'Get the Shopware version of the shop',
-				action: 'Get the shopware version',
+				action: 'Get the shop version',
 			},
 		],
 		default: 'getVersion',
